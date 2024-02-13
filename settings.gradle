@@ -1,1 +1,3 @@
-rootProject.name = 'habbit-coach'
+rootProject.name = 'habit-coach'
+
+include 'habit'

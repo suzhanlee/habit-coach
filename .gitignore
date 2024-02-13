@@ -1,8 +1,5 @@
 # intellj
 .idea
-*.iml
-*.iws
-*.ipr
 out
 
 # gradle
@@ -18,8 +15,3 @@ Desktop.ini
 *.log
 *.jar
 *.war
-temp/
-tmp/
-*.swp
-*~
-.DS_Store
