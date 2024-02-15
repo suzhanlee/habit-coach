@@ -1,9 +1,14 @@
 package app.habit.controller;
 
+import static app.habit.controller.Path.PHASE;
 import static app.habit.controller.Path.PRE_QUESTIONS;
+import static app.habit.domain.HabitFormingPhaseType.CONSIDERATION_STAGE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import app.habit.dto.HabitPreQuestionRs;
+import app.habit.dto.PhaseEvaluationAnswerRq;
+import app.habit.dto.PhaseEvaluationRq;
+import app.habit.dto.PhaseEvaluationRs;
 import app.habit.dto.QuestionRs;
 import io.restassured.RestAssured;
 import io.restassured.common.mapper.TypeRef;
@@ -16,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 
 @DisplayName("gpt api 관련 기능")
 @SpringBootTest(webEnvironment = WebEnvironment.DEFINED_PORT)
@@ -63,5 +69,51 @@ class HabitControllerTest {
                                                         String question) {
         return new HabitPreQuestionRs(subjectKey, subject,
                 new QuestionRs(questionKey, question));
+    }
+
+    @Test
+    @DisplayName("사용자의 습관 수준을 습관 형성 모델에 따라 평가한다.")
+    void evaluate_user_habit_phase() {
+        // given
+        PhaseEvaluationRq givenRq = createPhaseEvaluationRq(1, createPhaseEvaluationAnswers());
+
+        // when
+        ExtractableResponse<Response> response = RestAssured
+                .given().body(givenRq).contentType(MediaType.APPLICATION_JSON_VALUE)
+                .when().post(PHASE)
+                .then()
+                .extract();
+
+        // then
+        assertThat(response.statusCode()).isEqualTo(HttpStatus.CREATED.value());
+        assertThat(createActualPhaseEvaluationRs(response)).usingRecursiveComparison().isEqualTo(createExpectedPhaseEvaluationRs());
+    }
+
+    private PhaseEvaluationRq createPhaseEvaluationRq(long phaseId, List<PhaseEvaluationAnswerRq> phaseEvaluationAnswers) {
+        return new PhaseEvaluationRq(phaseId, phaseEvaluationAnswers);
+    }
+
+    private List<PhaseEvaluationAnswerRq> createPhaseEvaluationAnswers() {
+        PhaseEvaluationAnswerRq rq1 = new PhaseEvaluationAnswerRq("1",
+                "저는 매일 밤 잠자리에 들기 전에 책을 읽는 습관을 기르는 데 집중하고 있습니다. 독서는 긴장을 풀고 기술로부터의 연결을 끊는 데 도움이 되어 수면의 질을 향상시키기 때문에 중요하다고 믿습니다.");
+        PhaseEvaluationAnswerRq rq2 = new PhaseEvaluationAnswerRq("2",
+                "네, 매일 밤 잠들기 전 30분 이상 책을 읽는 것을 목표로 삼았습니다. 이를 달성하기 위해 관심 있는 책 목록을 선택하고 독서등과 책을 한 무더기씩 놓아두었습니다. 방해가 되지 않도록 예정된 독서 시간 한 시간 전에 모든 전자 장치를 끄기로 결정했습니다.");
+        PhaseEvaluationAnswerRq rq3 = new PhaseEvaluationAnswerRq("3",
+                "내가 취한 가장 작은 조치는 가능한 한 쉽게 끝까지 읽을 수 있도록 하루에 한 페이지부터 시작하는 것입니다. 이것이 내 일상의 일부가 되면서 점차적으로 읽는 양을 늘리는 것이 내 계획입니다.");
+        PhaseEvaluationAnswerRq rq4 = new PhaseEvaluationAnswerRq("4",
+                "지금까지 일주일에 며칠 밤만 책을 읽었습니다. 매일 밤 읽은 페이지 수를 일지에 기록하여 진행 상황을 추적하고 있습니다.");
+        PhaseEvaluationAnswerRq rq5 = new PhaseEvaluationAnswerRq("5",
+                "아직 시작하는 단계라 습관을 유지하는 것이 어려울 정도는 아닙니다. 스케줄이 바빠지면 시간을 내기가 어려울 것으로 예상하지만, 일정을 잡아서 해결하려고 합니다. 내 달력에서는 독서 시간을 더 엄격하게 정해요.");
+
+        return new ArrayList<>(List.of(rq1, rq2, rq3, rq4, rq5));
+    }
+
+    private PhaseEvaluationRs createActualPhaseEvaluationRs(ExtractableResponse<Response> response) {
+        return response.as(new TypeRef<PhaseEvaluationRs>() {});
+    }
+
+    private PhaseEvaluationRs createExpectedPhaseEvaluationRs() {
+        return new PhaseEvaluationRs(1, CONSIDERATION_STAGE,
+                "목표 설정 및 계획의 고려 단계에서 개인은 단순히 변화를 만들거나 새로운 습관을 개발하는 것에 대해 생각하는 것에서 이를 수행하는 방법을 적극적으로 계획하는 것으로 전환하고 있습니다. 이 단계에는 모호한 아이디어나 욕구를 구체적이고 실행 가능한 목표로 구체화하는 작업이 포함됩니다. 이는 '변화를 만들고 싶다'에서 '정확히 내가 할 일과 방법은 다음과 같습니다.'로 이동하는 것입니다. 초점은 구체성, 타당성 및 앞으로의 여정에 대한 계획에 있습니다.");
     }
 }

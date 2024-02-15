@@ -1,14 +1,23 @@
 package app.habit.controller;
 
+import static app.habit.controller.Path.PHASE;
 import static app.habit.controller.Path.PRE_QUESTIONS;
+import static app.habit.domain.HabitFormingPhaseType.CONSIDERATION_STAGE;
+import static org.springframework.http.HttpStatus.CREATED;
 
 import app.habit.dto.HabitPreQuestionRs;
+import app.habit.dto.PhaseEvaluationRq;
+import app.habit.dto.PhaseEvaluationRs;
 import app.habit.dto.QuestionRs;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -39,5 +48,15 @@ public class HabitController {
                                                         String question) {
         return new HabitPreQuestionRs(subjectKey, subject,
                 new QuestionRs(questionKey, question));
+    }
+
+    @PostMapping(PHASE)
+    public ResponseEntity<PhaseEvaluationRs> evaluatePhase(@RequestBody PhaseEvaluationRq rq) {
+        return ResponseEntity.status(CREATED).body(createExpectedPhaseEvaluationRs());
+    }
+
+    private PhaseEvaluationRs createExpectedPhaseEvaluationRs() {
+        return new PhaseEvaluationRs(1, CONSIDERATION_STAGE,
+                "목표 설정 및 계획의 고려 단계에서 개인은 단순히 변화를 만들거나 새로운 습관을 개발하는 것에 대해 생각하는 것에서 이를 수행하는 방법을 적극적으로 계획하는 것으로 전환하고 있습니다. 이 단계에는 모호한 아이디어나 욕구를 구체적이고 실행 가능한 목표로 구체화하는 작업이 포함됩니다. 이는 '변화를 만들고 싶다'에서 '정확히 내가 할 일과 방법은 다음과 같습니다.'로 이동하는 것입니다. 초점은 구체성, 타당성 및 앞으로의 여정에 대한 계획에 있습니다.");
     }
 }
