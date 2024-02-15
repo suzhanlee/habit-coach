@@ -9,6 +9,8 @@ import static org.springframework.http.HttpStatus.CREATED;
 import app.habit.dto.HabitPreQuestionRs;
 import app.habit.dto.PhaseEvaluationRq;
 import app.habit.dto.PhaseEvaluationRs;
+import app.habit.dto.PhaseFeedbackRq;
+import app.habit.dto.PhaseFeedbackRs;
 import app.habit.dto.PhaseQuestionRs;
 import app.habit.dto.QuestionRs;
 import app.habit.dto.UserHabitPreQuestionRq;
@@ -54,10 +56,10 @@ public class HabitController {
 
     @PostMapping(PHASE)
     public ResponseEntity<PhaseEvaluationRs> evaluatePhase(@RequestBody PhaseEvaluationRq rq) {
-        return ResponseEntity.status(CREATED).body(createExpectedPhaseEvaluationRs());
+        return ResponseEntity.status(CREATED).body(createPhaseEvaluationRs());
     }
 
-    private PhaseEvaluationRs createExpectedPhaseEvaluationRs() {
+    private PhaseEvaluationRs createPhaseEvaluationRs() {
         return new PhaseEvaluationRs(1, CONSIDERATION_STAGE,
                 "목표 설정 및 계획의 고려 단계에서 개인은 단순히 변화를 만들거나 새로운 습관을 개발하는 것에 대해 생각하는 것에서 이를 수행하는 방법을 적극적으로 계획하는 것으로 전환하고 있습니다. 이 단계에는 모호한 아이디어나 욕구를 구체적이고 실행 가능한 목표로 구체화하는 작업이 포함됩니다. 이는 '변화를 만들고 싶다'에서 '정확히 내가 할 일과 방법은 다음과 같습니다.'로 이동하는 것입니다. 초점은 구체성, 타당성 및 앞으로의 여정에 대한 계획에 있습니다.");
     }
@@ -100,5 +102,15 @@ public class HabitController {
         PhaseQuestionRs rs3 = new PhaseQuestionRs("3", "이 작은 단계들을 어떻게 일상의 다른 활동이나 습관과 연결할 수 있을까요?");
 
         return new ArrayList<>(List.of(rs1, rs2, rs3));
+    }
+
+    @PostMapping
+    public ResponseEntity<PhaseFeedbackRs> feedbackUserAnswer(@RequestBody PhaseFeedbackRq rq) {
+        return ResponseEntity.ok().body(createPhaseFeedbackRs());
+    }
+
+    private PhaseFeedbackRs createPhaseFeedbackRs() {
+        return new PhaseFeedbackRs("일상에 통합하는 작은 단계 설정",
+                "매일 아침 스트레칭은 좋은 시작입니다. 이를 일상에 통합하기 위해, 저녁에는 다음 날의 준비를 해두세요. 이러한 준비는 스트레칭을 더욱 쉽게 만들 것입니다.");
     }
 }

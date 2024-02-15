@@ -8,9 +8,12 @@ import static org.assertj.core.api.Assertions.offset;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import app.habit.dto.HabitPreQuestionRs;
+import app.habit.dto.PhaseAnswerRq;
 import app.habit.dto.PhaseEvaluationAnswerRq;
 import app.habit.dto.PhaseEvaluationRq;
 import app.habit.dto.PhaseEvaluationRs;
+import app.habit.dto.PhaseFeedbackRq;
+import app.habit.dto.PhaseFeedbackRs;
 import app.habit.dto.PhaseQuestionRs;
 import app.habit.dto.QuestionRs;
 import app.habit.dto.UserHabitPreQuestionRq;
@@ -139,7 +142,8 @@ class HabitControllerTest {
 
         // then
         assertThat(response.statusCode()).isEqualTo(HttpStatus.OK.value());
-        assertThat(createActualUserHabitPreQuestionRs(response)).usingRecursiveComparison().isEqualTo(createExpectedUserHabitPreQuestionRs());
+        assertThat(createActualUserHabitPreQuestionRs(response)).usingRecursiveComparison()
+                .isEqualTo(createExpectedUserHabitPreQuestionRs());
     }
 
     private UserHabitPreQuestionRq createUserHabitPreQuestionRq() {
@@ -147,7 +151,8 @@ class HabitControllerTest {
     }
 
     private List<UserHabitPreQuestionRs> createActualUserHabitPreQuestionRs(ExtractableResponse<Response> response) {
-        return response.as(new TypeRef<List<UserHabitPreQuestionRs>>() {});
+        return response.as(new TypeRef<List<UserHabitPreQuestionRs>>() {
+        });
     }
 
     private List<UserHabitPreQuestionRs> createExpectedUserHabitPreQuestionRs() {
@@ -183,5 +188,46 @@ class HabitControllerTest {
         PhaseQuestionRs rs3 = new PhaseQuestionRs("3", "이 작은 단계들을 어떻게 일상의 다른 활동이나 습관과 연결할 수 있을까요?");
 
         return new ArrayList<>(List.of(rs1, rs2, rs3));
+    }
+
+    @Test
+    @DisplayName("사용자가 답변을 제출하면 피드백이 온다.")
+    void get_feedback_according_to_answer() {
+        // given
+        PhaseFeedbackRq givenRq = createGivenRq(1, createPhaseAnswers());
+
+        // when
+        ExtractableResponse<Response> response = RestAssured
+                .given().body(givenRq).contentType(APPLICATION_JSON_VALUE)
+                .when().post()
+                .then()
+                .extract();
+
+        // then
+        assertThat(response.statusCode()).isEqualTo(HttpStatus.OK.value());
+        assertThat(createActualPhaseFeedbackRs(response)).usingRecursiveComparison()
+                .isEqualTo(createExpectedPhaseFeedbackRs());
+    }
+
+    private PhaseFeedbackRq createGivenRq(long feedbackModuleId, List<PhaseAnswerRq> phaseAnswers) {
+        return new PhaseFeedbackRq(feedbackModuleId, phaseAnswers);
+    }
+
+    private List<PhaseAnswerRq> createPhaseAnswers() {
+        PhaseAnswerRq rq1 = new PhaseAnswerRq("1", "가장 먼저, 매일 아침 10분간 스트레칭을 시작할 계획입니다.");
+        PhaseAnswerRq rq2 = new PhaseAnswerRq("2", "이를 위해, 매일 아침 알람을 설정하고, 침대 옆에 스트레칭 매트를 놓을 것입니다.");
+        PhaseAnswerRq rq3 = new PhaseAnswerRq("3", "이 작은 습관을 통해 하루를 더 활기차게 시작하고, 유연성을 향상시키고 싶습니다.");
+
+        return new ArrayList<>(List.of(rq1, rq2, rq3));
+    }
+
+    private PhaseFeedbackRs createActualPhaseFeedbackRs(ExtractableResponse<Response> response) {
+        return response.as(new TypeRef<PhaseFeedbackRs>() {
+        });
+    }
+
+    private PhaseFeedbackRs createExpectedPhaseFeedbackRs() {
+        return new PhaseFeedbackRs("일상에 통합하는 작은 단계 설정",
+                "매일 아침 스트레칭은 좋은 시작입니다. 이를 일상에 통합하기 위해, 저녁에는 다음 날의 준비를 해두세요. 이러한 준비는 스트레칭을 더욱 쉽게 만들 것입니다.");
     }
 }
