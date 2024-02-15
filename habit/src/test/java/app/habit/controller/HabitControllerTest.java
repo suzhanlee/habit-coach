@@ -49,15 +49,16 @@ class HabitControllerTest {
 
         // then
         assertThat(response.statusCode()).isEqualTo(HttpStatus.OK.value());
-        assertThat(createActualRs(response)).usingRecursiveComparison().isEqualTo(createExpectedRs());
+        assertThat(createActualHabitPreQuestionRs(response)).usingRecursiveComparison().isEqualTo(
+                createExpectedHabitPreQuestionRs());
     }
 
-    private List<HabitPreQuestionRs> createActualRs(ExtractableResponse<Response> response) {
+    private List<HabitPreQuestionRs> createActualHabitPreQuestionRs(ExtractableResponse<Response> response) {
         return response.as(new TypeRef<List<HabitPreQuestionRs>>() {
         });
     }
 
-    private List<HabitPreQuestionRs> createExpectedRs() {
+    private List<HabitPreQuestionRs> createExpectedHabitPreQuestionRs() {
         HabitPreQuestionRs rs1 = createHabitPreQuestionRs("1", "일반적인 인식 및 의도", "1",
                 "현재 어떤 습관을 기르기 위해 노력하고 있으며, 그것이 왜 중요하다고 생각하시나요?");
         HabitPreQuestionRs rs2 = createHabitPreQuestionRs("2", "목표 명확성 및 계획", "2",
@@ -194,7 +195,7 @@ class HabitControllerTest {
     @DisplayName("사용자가 답변을 제출하면 피드백이 온다.")
     void get_feedback_according_to_answer() {
         // given
-        PhaseFeedbackRq givenRq = createGivenRq(1, createPhaseAnswers());
+        PhaseFeedbackRq givenRq = createPhaseFeedbackRq(1, createPhaseAnswers());
 
         // when
         ExtractableResponse<Response> response = RestAssured
@@ -209,7 +210,7 @@ class HabitControllerTest {
                 .isEqualTo(createExpectedPhaseFeedbackRs());
     }
 
-    private PhaseFeedbackRq createGivenRq(long feedbackModuleId, List<PhaseAnswerRq> phaseAnswers) {
+    private PhaseFeedbackRq createPhaseFeedbackRq(long feedbackModuleId, List<PhaseAnswerRq> phaseAnswers) {
         return new PhaseFeedbackRq(feedbackModuleId, phaseAnswers);
     }
 
