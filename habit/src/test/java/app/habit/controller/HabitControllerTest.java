@@ -4,7 +4,6 @@ import static app.habit.controller.Path.PHASE;
 import static app.habit.controller.Path.PRE_QUESTIONS;
 import static app.habit.domain.HabitFormingPhaseType.CONSIDERATION_STAGE;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.offset;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import app.habit.dto.HabitPreQuestionRs;
@@ -54,8 +53,7 @@ class HabitControllerTest {
     }
 
     private List<HabitPreQuestionRs> createActualHabitPreQuestionRs(ExtractableResponse<Response> response) {
-        return response.as(new TypeRef<List<HabitPreQuestionRs>>() {
-        });
+        return response.as(new TypeRef<>() {});
     }
 
     private List<HabitPreQuestionRs> createExpectedHabitPreQuestionRs() {
@@ -119,7 +117,7 @@ class HabitControllerTest {
     }
 
     private PhaseEvaluationRs createActualPhaseEvaluationRs(ExtractableResponse<Response> response) {
-        return response.as(new TypeRef<PhaseEvaluationRs>() {
+        return response.as(new TypeRef<>() {
         });
     }
 
@@ -152,7 +150,7 @@ class HabitControllerTest {
     }
 
     private List<UserHabitPreQuestionRs> createActualUserHabitPreQuestionRs(ExtractableResponse<Response> response) {
-        return response.as(new TypeRef<List<UserHabitPreQuestionRs>>() {
+        return response.as(new TypeRef<>() {
         });
     }
 
@@ -223,7 +221,7 @@ class HabitControllerTest {
     }
 
     private PhaseFeedbackRs createActualPhaseFeedbackRs(ExtractableResponse<Response> response) {
-        return response.as(new TypeRef<PhaseFeedbackRs>() {
+        return response.as(new TypeRef<>() {
         });
     }
 
