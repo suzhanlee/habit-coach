@@ -32,4 +32,9 @@ public class AppConfig {
     public PreQuestionCoach coach() {
         return new PreQuestionCoach(restTemplate());
     }
+
+    @Bean
+    public HabitAssessmentManagerFactory habitAssessmentManagerFactory() {
+        return new HabitAssessmentManagerFactory();
+    }
 }
