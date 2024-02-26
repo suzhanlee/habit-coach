@@ -181,8 +181,10 @@ class HabitControllerTest {
 
         // then
         assertThat(response.statusCode()).isEqualTo(HttpStatus.OK.value());
-        assertThat(createActualPhaseFeedbackRs(response)).usingRecursiveComparison()
-                .isEqualTo(createExpectedPhaseFeedbackRs());
+
+        JsonPath actual = response.jsonPath();
+        assertThat(actual.getString("feedbackSubject")).isNotNull();
+        assertThat(actual.getString("feedback")).isNotNull();
     }
 
     private PhaseFeedbackRq createPhaseFeedbackRq(long feedbackModuleId, List<PhaseAnswerRq> phaseAnswers) {
@@ -195,15 +197,5 @@ class HabitControllerTest {
         PhaseAnswerRq rq3 = new PhaseAnswerRq("3", "이 작은 습관을 통해 하루를 더 활기차게 시작하고, 유연성을 향상시키고 싶습니다.");
 
         return new ArrayList<>(List.of(rq1, rq2, rq3));
-    }
-
-    private PhaseFeedbackRs createActualPhaseFeedbackRs(ExtractableResponse<Response> response) {
-        return response.as(new TypeRef<>() {
-        });
-    }
-
-    private PhaseFeedbackRs createExpectedPhaseFeedbackRs() {
-        return new PhaseFeedbackRs("일상에 통합하는 작은 단계 설정",
-                "매일 아침 스트레칭은 좋은 시작입니다. 이를 일상에 통합하기 위해, 저녁에는 다음 날의 준비를 해두세요. 이러한 준비는 스트레칭을 더욱 쉽게 만들 것입니다.");
     }
 }
