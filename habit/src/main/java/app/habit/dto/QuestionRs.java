@@ -9,6 +9,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class QuestionRs {
 
-    private String key;
-    private String content;
+    private String questionKey;
+    private String question;
 }
