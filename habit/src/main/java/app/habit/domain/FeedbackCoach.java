@@ -21,7 +21,7 @@ import org.springframework.web.client.RestTemplate;
 @RequiredArgsConstructor
 public class FeedbackCoach {
 
-    private static final String apiKey = "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";
+    private static final String apiKey = "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";
 
     private final RestTemplate restTemplate;
 

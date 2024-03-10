@@ -52,6 +52,10 @@ public class OpenAiService {
     private final SpecificPhasePreQuestionPromptFactory specificPhasePreQuestionPromptFactory;
     private final PhaseCoach phaseCoach;
 
+    private final FeedbackModuleRepository feedbackModuleRepository;
+    private final FeedbackPromptFactory feedbackPromptFactory;
+    private final FeedbackCoach feedbackCoach;
+
     public List<HabitPreQuestionRs> getHabitPreQuestions(Long phaseId, String type, String prompt) {
         RequestPrompt requestPrompt = promptFactory.createRequestBody(type, prompt);
         List<HabitPreQuestionRs> content = preQuestionCoach.advice(requestPrompt, url);
@@ -118,5 +122,26 @@ public class OpenAiService {
         return advice.stream()
                 .map(UserHabitPreQuestionRs::toFeedbackModule)
                 .collect(Collectors.toList());
+    }
+
+    public PhaseFeedbackRs getFeedbackAboutSpecificSubject(PhaseFeedbackRq rq) {
+        FeedbackModule feedbackModule = feedbackModuleRepository.findById(rq.getFeedbackModuleId()).orElseThrow();
+
+        // save answer
+        List<PhaseAnswerRq> phaseAnswers = rq.getPhaseAnswers();
+
+        for (PhaseAnswerRq phaseAnswer : phaseAnswers) {
+            feedbackModule.addAnswer(phaseAnswer.getKey(), phaseAnswer.getUserAnswer());
+        }
+
+        // gpt api 호출
+        RequestPrompt requestPrompt = feedbackPromptFactory.create(feedbackModule, rq.getHabitFormingPhaseType());
+        PhaseFeedbackRs advice = feedbackCoach.advice(requestPrompt, url);
+
+        // save subject & feedback to feedbackModule
+        feedbackModule.addSubject(advice.getFeedbackSubject());
+        feedbackModule.addFeedback(advice.getFeedback());
+
+        return advice;
     }
 }
