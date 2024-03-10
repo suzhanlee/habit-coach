@@ -15,12 +15,12 @@ public class UserHabitPreQuestionRs {
     private long feedbackModuleId;
     private String key;
     private String subject;
-    private List<PhaseQuestionRs> phaseQuestions;
+    private List<PhaseQuestionRs> questions;
 
     public FeedbackModule toFeedbackModule() {
         FeedbackModule feedbackModule = new FeedbackModule(key, subject);
-        for (PhaseQuestionRs phaseQuestion : this.phaseQuestions) {
-            feedbackModule.addSession(new FeedbackSession(phaseQuestion.getKey(), phaseQuestion.getQuestion()));
+        for (PhaseQuestionRs phaseQuestion : this.questions) {
+            feedbackModule.addSession(new FeedbackSession(phaseQuestion.getQuestionKey(), phaseQuestion.getQuestion()));
         }
         return feedbackModule;
     }

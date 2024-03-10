@@ -3,18 +3,31 @@ package app.habit.service.gpt;
 import app.habit.domain.Answer;
 import app.habit.domain.EvaluationCoach;
 import app.habit.domain.EvaluationPromptFactory;
+import app.habit.domain.FeedbackCoach;
+import app.habit.domain.FeedbackModule;
+import app.habit.domain.FeedbackPromptFactory;
 import app.habit.domain.HabitAssessmentManager;
 import app.habit.domain.HabitAssessmentManagerFactory;
 import app.habit.domain.HabitFormingPhase;
 import app.habit.domain.HabitFormingPhaseType;
+import app.habit.domain.PhaseCoach;
 import app.habit.domain.PreQuestionCoach;
 import app.habit.domain.PromptFactory;
+import app.habit.domain.SpecificPhasePreQuestionPromptFactory;
+import app.habit.domain.Subject;
 import app.habit.dto.HabitPreQuestionRs;
+import app.habit.dto.PhaseAnswerRq;
 import app.habit.dto.PhaseEvaluationAnswerRq;
 import app.habit.dto.PhaseEvaluationRq;
 import app.habit.dto.PhaseEvaluationRs;
+import app.habit.dto.PhaseFeedbackRq;
+import app.habit.dto.PhaseFeedbackRs;
+import app.habit.dto.UserHabitPreQuestionRq;
+import app.habit.dto.UserHabitPreQuestionRs;
+import app.habit.repository.FeedbackModuleRepository;
 import app.habit.repository.HabitFormingPhaseRepository;
 import app.habit.service.gpt.request.RequestPrompt;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +48,9 @@ public class OpenAiService {
     private final HabitFormingPhaseRepository habitFormingPhaseRepository;
     private final EvaluationPromptFactory evaluationPromptFactory;
     private final EvaluationCoach evaluationCoach;
+
+    private final SpecificPhasePreQuestionPromptFactory specificPhasePreQuestionPromptFactory;
+    private final PhaseCoach phaseCoach;
 
     public List<HabitPreQuestionRs> getHabitPreQuestions(Long phaseId, String type, String prompt) {
         RequestPrompt requestPrompt = promptFactory.createRequestBody(type, prompt);
@@ -78,5 +94,29 @@ public class OpenAiService {
         HabitFormingPhaseType phaseType = HabitFormingPhaseType.findType(advice.getPhaseType());
         String phaseDescription = advice.getPhaseDescription();
         habitFormingPhase.getHabitAssessmentManager().assess(phaseType, phaseDescription);
+    }
+
+    public List<UserHabitPreQuestionRs> getSpecificPhasePreQuestions(UserHabitPreQuestionRq rq) {
+        RequestPrompt requestPrompt = specificPhasePreQuestionPromptFactory.create(rq.getHabitFormingPhaseType());
+        List<UserHabitPreQuestionRs> advice = phaseCoach.advice(requestPrompt, url);
+
+        // find
+        HabitFormingPhase userHabitFormingPhase = habitFormingPhaseRepository.findById(rq.getHabitFormingPhaseId())
+                .orElseThrow();
+
+        // save 로직
+        List<FeedbackModule> feedbackModules = createFeedbackModules(advice);
+
+        // add modules to phase (feedbackModule을 더해줌)
+        userHabitFormingPhase.addFeedbackModules(feedbackModules);
+
+        // return response to user
+        return advice;
+    }
+
+    private List<FeedbackModule> createFeedbackModules(List<UserHabitPreQuestionRs> advice) {
+        return advice.stream()
+                .map(UserHabitPreQuestionRs::toFeedbackModule)
+                .collect(Collectors.toList());
     }
 }
