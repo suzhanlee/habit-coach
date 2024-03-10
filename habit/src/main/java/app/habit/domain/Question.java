@@ -24,7 +24,7 @@ public class Question {
     }
 
     public String createPrompt() {
-        return "질문 : " + question + '\n';
+        return "Question : " + question + '\n';
     }
 
     @Override

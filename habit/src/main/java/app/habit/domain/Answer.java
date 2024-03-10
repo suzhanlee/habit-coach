@@ -25,20 +25,8 @@ public class Answer {
         this.answer = answer;
     }
 
-    public String createPrompt(String subject, String questionPrompt) {
-        return createSubTitle(subject) + createQuestion(questionPrompt) + createAnswer();
-    }
-
-    private String createSubTitle(String subject) {
-        return "## " + answerKey + ". " + subject + '\n';
-    }
-
-    private String createAnswer() {
-        return this.answer + '\n';
-    }
-
-    private String createQuestion(String questionPrompt) {
-        return questionPrompt + '\n' + "답변 ";
+    public String createPrompt() {
+        return "Answer : " + this.answer + '\n';
     }
 
     @Override
