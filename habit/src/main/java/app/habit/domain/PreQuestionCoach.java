@@ -3,37 +3,40 @@ package app.habit.domain;
 import app.habit.dto.GptRsWrapper;
 import app.habit.dto.GptRsWrapper.Choice.Message;
 import app.habit.dto.HabitPreQuestionRs;
-import app.habit.dto.PhaseEvaluationRs;
 import app.habit.service.gpt.request.RequestPrompt;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+@Component
 @RequiredArgsConstructor
 public class PreQuestionCoach {
 
-    private static final String apiKey = "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";
+    private static final String apiKey = "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";
 
     private final RestTemplate restTemplate;
 
     public List<HabitPreQuestionRs> advice(RequestPrompt requestBody, String url) {
-        HttpEntity<RequestPrompt> request = createAdviceRequest(requestBody);
-        GptRsWrapper advice = requestTotalAdvice(url, request);
-        return getCoreAdvice(Objects.requireNonNull(advice));
+        GptRsWrapper adviceBody = writeAdvice(requestBody, url);
+        return parseAdvice(adviceBody);
     }
 
-    private HttpEntity<RequestPrompt> createAdviceRequest(RequestPrompt requestBody) {
-        return new HttpEntity<>(requestBody, createHeaders());
+    private GptRsWrapper writeAdvice(RequestPrompt requestBody, String url) {
+        return Optional.ofNullable(requestBody)
+                .map(body -> new HttpEntity<>(body, createHeaders()))
+                .map(entity -> restTemplate.exchange(url, HttpMethod.POST, entity, GptRsWrapper.class))
+                .map(HttpEntity::getBody)
+                .orElseThrow(NullPointerException::new);
     }
 
     private HttpHeaders createHeaders() {
@@ -44,17 +47,12 @@ public class PreQuestionCoach {
         return headers;
     }
 
-    private GptRsWrapper requestTotalAdvice(String url, HttpEntity<RequestPrompt> request) {
-        return restTemplate.exchange(url, HttpMethod.POST, request, GptRsWrapper.class).getBody();
-    }
-
-    private List<HabitPreQuestionRs> getCoreAdvice(GptRsWrapper body) {
+    private List<HabitPreQuestionRs> parseAdvice(GptRsWrapper body) {
+        Message message = body.getChoices().get(0).getMessage();
+        String content = message.getContent();
+        TypeReference<List<HabitPreQuestionRs>> typeReference = new TypeReference<>() {};
+        ObjectMapper objectMapper = new ObjectMapper();
         try {
-            Message message = body.getChoices().get(0).getMessage();
-            String content = message.getContent();
-            TypeReference<List<HabitPreQuestionRs>> typeReference = new TypeReference<>() {};
-
-            ObjectMapper objectMapper = new ObjectMapper();
             return objectMapper.readValue(content, typeReference);
         } catch (IOException e) {
             throw new RuntimeException(e);
