@@ -7,11 +7,12 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
 import jakarta.persistence.OneToMany;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
@@ -29,20 +30,35 @@ public class HabitAssessmentManager {
     @Column(columnDefinition = "TEXT")
     private String phaseDescription;
 
+    @Getter
     @OneToMany(mappedBy = "habitAssessmentManager",cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Subject> subjects = new ArrayList<>();
 
     public HabitAssessmentManager(List<Subject> subjects) {
-        this.subjects = subjects;
+        addSubjects(subjects);
     }
 
-    public void evaluate(HabitFormingPhaseType phaseType, String phaseDescription) {
+    private void addSubjects(List<Subject> subjects) {
+        this.subjects = subjects;
+        for (Subject subject : subjects) {
+            subject.addHabitAssessmentManager(this);
+        }
+    }
+
+    public void assess(HabitFormingPhaseType phaseType, String phaseDescription) {
         this.phaseType = phaseType;
         this.phaseDescription = phaseDescription;
     }
 
-    public List<Subject> getSubjects() {
-        return subjects;
+    public void addAnswersAccordingToSubject(List<Answer> answers) {
+        for (int i = 0; i < this.subjects.size(); i++) {
+            this.subjects.get(i).addAnswer(answers.get(i));
+        }
+    }
+
+    public String createPrompt() {
+        return this.subjects.stream().map(Subject::createPrompt).map(prompt -> prompt + '\n')
+                .collect(Collectors.joining());
     }
 
     @Override

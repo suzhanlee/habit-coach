@@ -44,12 +44,25 @@ public class Subject {
         this.question = question;
     }
 
-    public String createPrompt(Answer answer) {
-        return answer.createPrompt(this.subject, this.question.createPrompt());
+    public Subject(String subjectKey, String subject, Question question, Answer answer) {
+        this.subjectKey = subjectKey;
+        this.subject = subject;
+        this.question = question;
+        this.answer = answer;
     }
 
     public void addAnswer(Answer answer) {
         this.answer = answer;
+    }
+
+    public void addHabitAssessmentManager(HabitAssessmentManager habitAssessmentManager) {
+        this.habitAssessmentManager = habitAssessmentManager;
+    }
+
+    public String createPrompt() {
+        return "## " + subjectKey + ". " + subject + '\n'
+                + this.question.createPrompt()
+                + this.answer.createPrompt();
     }
 
     @Override
