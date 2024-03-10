@@ -20,6 +20,6 @@ public enum HabitFormingPhaseType {
         return Arrays.stream(values())
                 .filter(phaseType -> phaseType.name.equals(name))
                 .findFirst()
-                .orElseThrow();
+                .orElseThrow(IllegalArgumentException::new);
     }
 }

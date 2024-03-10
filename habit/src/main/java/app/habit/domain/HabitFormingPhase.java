@@ -11,6 +11,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
@@ -22,19 +23,20 @@ public class HabitFormingPhase {
     @Column(name = "habit_forming_phase_id")
     private Long id;
 
+    @Getter
     @JoinColumn(name = "habit_assessment_manager_id")
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     private HabitAssessmentManager habitAssessmentManager;
 
-    @OneToMany(mappedBy = "feedbackModule",cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "habitFormingPhase",cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FeedbackModule> feedbackModules = new ArrayList<>();
 
     public HabitFormingPhase(Long id) {
         this.id = id;
     }
 
-    public HabitAssessmentManager getHabitAssessmentManager() {
-        return habitAssessmentManager;
+    public HabitFormingPhase(HabitAssessmentManager habitAssessmentManager) {
+        this.habitAssessmentManager = habitAssessmentManager;
     }
 
     public void addHabitAssessmentManager(HabitAssessmentManager habitAssessmentManager) {
@@ -43,5 +45,14 @@ public class HabitFormingPhase {
 
     public void addFeedbackModules(List<FeedbackModule> feedbackModules) {
         this.feedbackModules.addAll(feedbackModules);
+        feedbackModules.forEach(feedbackModule -> feedbackModule.addHabitFormingPhase(this));
+    }
+
+    public void addAnswers(List<Answer> answers) {
+        this.habitAssessmentManager.addAnswersAccordingToSubject(answers);
+    }
+
+    public String createPrompt() {
+        return this.habitAssessmentManager.createPrompt();
     }
 }

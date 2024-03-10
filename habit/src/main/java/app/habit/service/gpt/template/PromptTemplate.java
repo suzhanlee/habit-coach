@@ -12,29 +12,6 @@ public enum PromptTemplate {
         public String createPromptWith(String prompt) {
             return HABIT_PRE_QUESTION_PROMPT;
         }
-    },
-    HABIT_PHASE_EVALUATION("단계 평가") {
-        @Override
-        public boolean supports(String type) {
-            return this.name.equals(type);
-        }
-
-        @Override
-        public String createPromptWith(String prompt) {
-            return null;
-        }
-    },
-
-    USER_HABIT_PHASE_PRE_QUESTION("유저 사전 질문") {
-        @Override
-        public boolean supports(String type) {
-            return this.name.equals(type);
-        }
-
-        @Override
-        public String createPromptWith(String prompt) {
-            return "prompt";
-        }
     };
 
     protected final String name;

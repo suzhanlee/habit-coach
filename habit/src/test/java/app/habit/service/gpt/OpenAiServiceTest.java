@@ -1,7 +1,6 @@
 package app.habit.service.gpt;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -9,11 +8,9 @@ import static org.mockito.Mockito.when;
 import app.habit.domain.HabitAssessmentManager;
 import app.habit.domain.HabitAssessmentManagerFactory;
 import app.habit.domain.HabitFormingPhase;
-import app.habit.domain.HabitFormingPhaseType;
 import app.habit.domain.PreQuestionCoach;
 import app.habit.domain.PromptFactory;
 import app.habit.dto.HabitPreQuestionRs;
-import app.habit.repository.HabitAssessmentManagerRepository;
 import app.habit.repository.HabitFormingPhaseRepository;
 import app.habit.service.gpt.request.RequestPrompt;
 import java.util.List;
@@ -24,7 +21,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.transaction.annotation.Transactional;
 
 @ExtendWith(MockitoExtension.class)
 class OpenAiServiceTest {
