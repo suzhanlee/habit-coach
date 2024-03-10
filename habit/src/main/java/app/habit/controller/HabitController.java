@@ -42,9 +42,9 @@ public class HabitController {
     }
 
     @PostMapping(PHASE_QUESTION)
-    public ResponseEntity<List<UserHabitPreQuestionRs>> getUserPhasePreQuestions(
+    public List<UserHabitPreQuestionRs> getUserPhasePreQuestions(
             @RequestBody UserHabitPreQuestionRq rq) {
-        return ResponseEntity.ok().body(createUserHabitPreQuestionRs());
+        return openAiService.getSpecificPhasePreQuestions(rq);
     }
 
     private List<UserHabitPreQuestionRs> createUserHabitPreQuestionRs() {
@@ -82,9 +82,9 @@ public class HabitController {
         return new ArrayList<>(List.of(rs1, rs2, rs3));
     }
 
-    @PostMapping
-    public ResponseEntity<PhaseFeedbackRs> feedbackUserAnswer(@RequestBody PhaseFeedbackRq rq) {
-        return ResponseEntity.ok().body(createPhaseFeedbackRs());
+    @PostMapping("/habit/coach/phase/feedback")
+    public PhaseFeedbackRs feedbackUserAnswer(@RequestBody PhaseFeedbackRq rq) {
+        return openAiService.getFeedbackAboutSpecificSubject(rq);
     }
 
     private PhaseFeedbackRs createPhaseFeedbackRs() {

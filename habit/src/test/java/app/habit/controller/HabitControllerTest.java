@@ -132,7 +132,7 @@ class HabitControllerTest {
     }
 
     private UserHabitPreQuestionRq createUserHabitPreQuestionRq() {
-        return new UserHabitPreQuestionRq(1, CONSIDERATION_STAGE);
+        return new UserHabitPreQuestionRq(1, "Consideration stage");
     }
 
     private void assertUserHabitPreQuestions(List<Map<String, Object>> userHabitPreQuestions) {
@@ -188,7 +188,7 @@ class HabitControllerTest {
     }
 
     private PhaseFeedbackRq createPhaseFeedbackRq(long feedbackModuleId, List<PhaseAnswerRq> phaseAnswers) {
-        return new PhaseFeedbackRq(feedbackModuleId, phaseAnswers);
+        return new PhaseFeedbackRq("Preparation stage", feedbackModuleId, phaseAnswers);
     }
 
     private List<PhaseAnswerRq> createPhaseAnswers() {
