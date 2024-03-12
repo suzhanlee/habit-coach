@@ -45,8 +45,8 @@ public class HabitAssessmentManager {
         }
     }
 
-    public void assess(HabitFormingPhaseType phaseType, String phaseDescription) {
-        this.phaseType = phaseType;
+    public void assess(String phaseType, String phaseDescription) {
+        this.phaseType = HabitFormingPhaseType.findType(phaseType);
         this.phaseDescription = phaseDescription;
     }
 

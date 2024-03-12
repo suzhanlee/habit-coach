@@ -1,35 +1,32 @@
 package app.habit.service.gpt;
 
 import app.habit.domain.Answer;
-import app.habit.domain.EvaluationCoach;
+import app.habit.domain.EvaluationGptCoach;
 import app.habit.domain.EvaluationPromptFactory;
-import app.habit.domain.FeedbackCoach;
+import app.habit.domain.FeedbackGptCoach;
 import app.habit.domain.FeedbackModule;
 import app.habit.domain.FeedbackPromptFactory;
+import app.habit.domain.FeedbackSession;
 import app.habit.domain.HabitAssessmentManager;
-import app.habit.domain.HabitAssessmentManagerFactory;
 import app.habit.domain.HabitFormingPhase;
-import app.habit.domain.HabitFormingPhaseType;
-import app.habit.domain.PhaseCoach;
-import app.habit.domain.PreQuestionCoach;
+import app.habit.domain.PhaseGptCoach;
+import app.habit.domain.PreQuestionGptCoach;
 import app.habit.domain.PromptFactory;
+import app.habit.domain.Question;
 import app.habit.domain.SpecificPhasePreQuestionPromptFactory;
 import app.habit.domain.Subject;
 import app.habit.dto.HabitPreQuestionRs;
-import app.habit.dto.PhaseAnswerRq;
-import app.habit.dto.PhaseEvaluationAnswerRq;
 import app.habit.dto.PhaseEvaluationRq;
 import app.habit.dto.PhaseEvaluationRs;
 import app.habit.dto.PhaseFeedbackRq;
 import app.habit.dto.PhaseFeedbackRs;
+import app.habit.dto.QuestionRs;
 import app.habit.dto.UserHabitPreQuestionRq;
 import app.habit.dto.UserHabitPreQuestionRs;
 import app.habit.repository.FeedbackModuleRepository;
 import app.habit.repository.HabitFormingPhaseRepository;
 import app.habit.service.gpt.request.RequestPrompt;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,107 +38,113 @@ public class OpenAiService {
 
     private static final String url = "https://api.openai.com/v1/chat/completions";
 
-    private final PreQuestionCoach preQuestionCoach;
+    private final PreQuestionGptCoach preQuestionGptCoach;
     private final PromptFactory promptFactory;
-    private final HabitAssessmentManagerFactory habitAssessmentManagerFactory;
 
     private final HabitFormingPhaseRepository habitFormingPhaseRepository;
     private final EvaluationPromptFactory evaluationPromptFactory;
-    private final EvaluationCoach evaluationCoach;
+    private final EvaluationGptCoach evaluationGptCoach;
 
     private final SpecificPhasePreQuestionPromptFactory specificPhasePreQuestionPromptFactory;
-    private final PhaseCoach phaseCoach;
+    private final PhaseGptCoach phaseGptCoach;
 
     private final FeedbackModuleRepository feedbackModuleRepository;
     private final FeedbackPromptFactory feedbackPromptFactory;
-    private final FeedbackCoach feedbackCoach;
+    private final FeedbackGptCoach feedbackGptCoach;
 
     public List<HabitPreQuestionRs> getHabitPreQuestions(Long phaseId, String type, String prompt) {
-        RequestPrompt requestPrompt = promptFactory.createRequestBody(type, prompt);
-        List<HabitPreQuestionRs> content = preQuestionCoach.advice(requestPrompt, url);
-        HabitAssessmentManager habitAssessmentManager = habitAssessmentManagerFactory.createHabitAssessmentManager(
-                content);
+        // request -> gpt
+        RequestPrompt requestPrompt = promptFactory.create(type, prompt);
+        List<HabitPreQuestionRs> preQuestionRs = preQuestionGptCoach.requestPreQuestions(requestPrompt, url);
+
+        // find
         HabitFormingPhase findHabitFormingPhase = habitFormingPhaseRepository.findById(phaseId)
                 .orElseThrow(RuntimeException::new);
+
+        // save
+        HabitAssessmentManager habitAssessmentManager = new HabitAssessmentManager(preQuestionRs.stream()
+                .map(rs -> {
+                    String key = rs.getKey();
+                    String subject = rs.getSubject();
+                    QuestionRs questionRs = rs.getQuestionRs();
+                    return new Subject(key, subject,
+                            new Question(questionRs.getQuestionKey(), questionRs.getQuestion()));
+                })
+                .toList());
         findHabitFormingPhase.addHabitAssessmentManager(habitAssessmentManager);
-        return content;
+
+        // return
+        return preQuestionRs;
     }
 
     public PhaseEvaluationRs evaluateHabitPhase(PhaseEvaluationRq rq) {
         // find habitFormingPhase
-        long habitFormingPhaseId = rq.getHabitFormingPhaseId();
-        HabitFormingPhase habitFormingPhase = habitFormingPhaseRepository.findById(habitFormingPhaseId).orElseThrow();
+        HabitFormingPhase habitFormingPhase = habitFormingPhaseRepository.findById(rq.getHabitFormingPhaseId())
+                .orElseThrow();
 
         // save answers according to subject
-        List<Answer> answers = createAnswers(rq);
-        habitFormingPhase.addAnswers(answers);
+        habitFormingPhase.addAnswers(rq.getAnswers().stream()
+                .map(phaseEvaluationAnswerRq -> new Answer(
+                        phaseEvaluationAnswerRq.getKey(),
+                        phaseEvaluationAnswerRq.getUserAnswer())
+                ).toList());
 
-        // create prompt
+        // request -> gpt
         RequestPrompt requestPrompt = evaluationPromptFactory.create(habitFormingPhase);
+        PhaseEvaluationRs evaluationRs = evaluationGptCoach.requestEvaluation(requestPrompt, url);
 
-        // request advice
-        PhaseEvaluationRs advice = evaluationCoach.advice(requestPrompt, url);
+        // save evaluation result
+        String phaseType = evaluationRs.getPhaseType();
+        String phaseDescription = evaluationRs.getPhaseDescription();
+        habitFormingPhase.addEvaluationResult(phaseType, phaseDescription);
 
-        // save advice
-        saveHabitAssessment(advice, habitFormingPhase);
-
-        return advice;
-    }
-
-    private List<Answer> createAnswers(PhaseEvaluationRq rq) {
-        List<PhaseEvaluationAnswerRq> rqs = rq.getAnswers();
-        return rqs.stream().map(phaseEvaluationAnswerRq -> new Answer(phaseEvaluationAnswerRq.getKey(),
-                phaseEvaluationAnswerRq.getUserAnswer())).collect(Collectors.toList());
-    }
-
-    private void saveHabitAssessment(PhaseEvaluationRs advice, HabitFormingPhase habitFormingPhase) {
-        HabitFormingPhaseType phaseType = HabitFormingPhaseType.findType(advice.getPhaseType());
-        String phaseDescription = advice.getPhaseDescription();
-        habitFormingPhase.getHabitAssessmentManager().assess(phaseType, phaseDescription);
+        return evaluationRs;
     }
 
     public List<UserHabitPreQuestionRs> getSpecificPhasePreQuestions(UserHabitPreQuestionRq rq) {
+        // request -> gpt
         RequestPrompt requestPrompt = specificPhasePreQuestionPromptFactory.create(rq.getHabitFormingPhaseType());
-        List<UserHabitPreQuestionRs> advice = phaseCoach.advice(requestPrompt, url);
+        List<UserHabitPreQuestionRs> userHabitPreQuestionRs = phaseGptCoach.requestUserHabitPreQuestions(requestPrompt, url);
+
+        // save 로직
+        List<FeedbackModule> feedbackModules = userHabitPreQuestionRs.stream()
+                .map(rs -> {
+                    FeedbackModule feedbackModule = new FeedbackModule(rs.getKey(), rs.getSubject());
+                    rs.getQuestions()
+                            .forEach(question -> feedbackModule.addSession(
+                                    new FeedbackSession(question.getQuestionKey(), question.getQuestion()))
+                            );
+                    return feedbackModule;
+                })
+                .toList();
 
         // find
         HabitFormingPhase userHabitFormingPhase = habitFormingPhaseRepository.findById(rq.getHabitFormingPhaseId())
                 .orElseThrow();
 
-        // save 로직
-        List<FeedbackModule> feedbackModules = createFeedbackModules(advice);
-
         // add modules to phase (feedbackModule을 더해줌)
         userHabitFormingPhase.addFeedbackModules(feedbackModules);
 
         // return response to user
-        return advice;
-    }
-
-    private List<FeedbackModule> createFeedbackModules(List<UserHabitPreQuestionRs> advice) {
-        return advice.stream()
-                .map(UserHabitPreQuestionRs::toFeedbackModule)
-                .collect(Collectors.toList());
+        return userHabitPreQuestionRs;
     }
 
     public PhaseFeedbackRs getFeedbackAboutSpecificSubject(PhaseFeedbackRq rq) {
-        FeedbackModule feedbackModule = feedbackModuleRepository.findById(rq.getFeedbackModuleId()).orElseThrow();
+        FeedbackModule feedbackModule = feedbackModuleRepository.findById(rq.getFeedbackModuleId())
+                .orElseThrow();
 
         // save answer
-        List<PhaseAnswerRq> phaseAnswers = rq.getPhaseAnswers();
+        rq.getPhaseAnswers()
+                .forEach(phaseAnswer -> feedbackModule.addAnswer(phaseAnswer.getKey(), phaseAnswer.getUserAnswer()));
 
-        for (PhaseAnswerRq phaseAnswer : phaseAnswers) {
-            feedbackModule.addAnswer(phaseAnswer.getKey(), phaseAnswer.getUserAnswer());
-        }
-
-        // gpt api 호출
+        // request -> gpt
         RequestPrompt requestPrompt = feedbackPromptFactory.create(feedbackModule, rq.getHabitFormingPhaseType());
-        PhaseFeedbackRs advice = feedbackCoach.advice(requestPrompt, url);
+        PhaseFeedbackRs phaseFeedbackRs = feedbackGptCoach.requestPhaseFeedback(requestPrompt, url);
 
         // save subject & feedback to feedbackModule
-        feedbackModule.addSubject(advice.getFeedbackSubject());
-        feedbackModule.addFeedback(advice.getFeedback());
+        feedbackModule.addSubject(phaseFeedbackRs.getFeedbackSubject());
+        feedbackModule.addFeedback(phaseFeedbackRs.getFeedback());
 
-        return advice;
+        return phaseFeedbackRs;
     }
 }

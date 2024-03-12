@@ -24,13 +24,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
 @ExtendWith(MockitoExtension.class)
-class PreQuestionCoachTest {
+class PreQuestionGptCoachTest {
 
     @Mock
     private RestTemplate restTemplate;
 
     @InjectMocks
-    private PreQuestionCoach preQuestionCoach;
+    private PreQuestionGptCoach preQuestionGptCoach;
 
     @Test
     @DisplayName("사전 질문 전담 코치에게 조언을 구하는지 확인한다.")
@@ -50,7 +50,7 @@ class PreQuestionCoachTest {
                 eq(GptRsWrapper.class)
         )).thenReturn(new ResponseEntity<>(mockRs, HttpStatus.OK));
 
-        List<HabitPreQuestionRs> result = preQuestionCoach.advice(givenMockRq, givenUrl);
+        List<HabitPreQuestionRs> result = preQuestionGptCoach.requestPreQuestions(givenMockRq, givenUrl);
 
         // then
         assertThat(result.size()).isEqualTo(actualMockContent.size());

@@ -55,4 +55,8 @@ public class HabitFormingPhase {
     public String createPrompt() {
         return this.habitAssessmentManager.createPrompt();
     }
+
+    public void addEvaluationResult(String phaseType, String phaseDescription) {
+        this.habitAssessmentManager.assess(phaseType, phaseDescription);
+    }
 }

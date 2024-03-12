@@ -16,7 +16,7 @@ public class PromptFactory {
 
     private final TemplateResolver templateResolver;
 
-    public RequestPrompt createRequestBody(String type, String userPrompt) {
+    public RequestPrompt create(String type, String userPrompt) {
         String prompt = createPrompt(type, userPrompt);
         return new RequestPrompt(model, List.of(new PromptMessage(PromptRole.USER, prompt)));
     }
