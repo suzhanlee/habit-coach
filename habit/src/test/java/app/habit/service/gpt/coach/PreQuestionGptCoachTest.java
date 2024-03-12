@@ -1,4 +1,4 @@
-package app.habit.domain;
+package app.habit.service.gpt.coach;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -9,6 +9,7 @@ import app.habit.dto.GptRsWrapper;
 import app.habit.dto.GptRsWrapper.Choice;
 import app.habit.dto.GptRsWrapper.Choice.Message;
 import app.habit.dto.HabitPreQuestionRs;
+import app.habit.service.gpt.coach.PreQuestionGptCoach;
 import app.habit.service.gpt.request.RequestPrompt;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;

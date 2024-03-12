@@ -1,14 +1,13 @@
-package app.habit.domain;
+package app.habit.service.gpt.coach;
 
 import app.habit.dto.GptRsWrapper;
 import app.habit.dto.GptRsWrapper.Choice.Message;
-import app.habit.dto.HabitPreQuestionRs;
+import app.habit.dto.PhaseEvaluationRs;
 import app.habit.service.gpt.request.RequestPrompt;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
@@ -20,13 +19,12 @@ import org.springframework.web.client.RestTemplate;
 
 @Component
 @RequiredArgsConstructor
-public class PreQuestionGptCoach {
-
+public class EvaluationGptCoach {
     private static final String apiKey = "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";
 
     private final RestTemplate restTemplate;
 
-    public List<HabitPreQuestionRs> requestPreQuestions(RequestPrompt requestBody, String url) {
+    public PhaseEvaluationRs requestEvaluation(RequestPrompt requestBody, String url) {
         GptRsWrapper adviceBody = writeAdvice(requestBody, url);
         return parseAdvice(adviceBody);
     }
@@ -47,10 +45,11 @@ public class PreQuestionGptCoach {
         return headers;
     }
 
-    private List<HabitPreQuestionRs> parseAdvice(GptRsWrapper body) {
+    private PhaseEvaluationRs parseAdvice(GptRsWrapper body) {
         Message message = body.getChoices().get(0).getMessage();
         String content = message.getContent();
-        TypeReference<List<HabitPreQuestionRs>> typeReference = new TypeReference<>() {};
+        TypeReference<PhaseEvaluationRs> typeReference = new TypeReference<>() {
+        };
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             return objectMapper.readValue(content, typeReference);
