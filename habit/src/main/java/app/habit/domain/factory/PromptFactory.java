@@ -1,4 +1,4 @@
-package app.habit.domain;
+package app.habit.domain.factory;
 
 import app.habit.service.gpt.request.PromptMessage;
 import app.habit.service.gpt.request.PromptRole;

@@ -1,7 +1,13 @@
-package app.habit.domain;
+package app.habit.domain.factory;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import app.habit.domain.Answer;
+import app.habit.domain.HabitAssessmentManager;
+import app.habit.domain.HabitFormingPhase;
+import app.habit.domain.Question;
+import app.habit.domain.Subject;
+import app.habit.domain.factory.EvaluationPromptFactory;
 import app.habit.service.gpt.request.PromptMessage;
 import app.habit.service.gpt.request.PromptRole;
 import app.habit.service.gpt.request.RequestPrompt;

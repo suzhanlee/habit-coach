@@ -1,5 +1,6 @@
-package app.habit.domain;
+package app.habit.domain.factory;
 
+import app.habit.domain.HabitFormingPhaseType;
 import app.habit.service.gpt.request.PromptMessage;
 import app.habit.service.gpt.request.PromptRole;
 import app.habit.service.gpt.request.RequestPrompt;

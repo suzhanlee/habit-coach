@@ -1,8 +1,8 @@
-package app.habit.domain;
+package app.habit.domain.factory;
 
-import static app.habit.domain.HabitFormingPhaseType.ACTION_STAGE;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import app.habit.domain.factory.SpecificPhasePreQuestionPromptFactory;
 import app.habit.service.gpt.request.PromptMessage;
 import app.habit.service.gpt.request.PromptRole;
 import app.habit.service.gpt.request.RequestPrompt;
