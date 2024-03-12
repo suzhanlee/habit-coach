@@ -45,6 +45,10 @@ public class FeedbackModule {
         this.subject = subject;
     }
 
+    public FeedbackModule(Long id) {
+        this.id = id;
+    }
+
     public void addSession(FeedbackSession feedbackSession) {
         this.feedbackSessions.add(feedbackSession);
         feedbackSession.addFeedbackModule(this);

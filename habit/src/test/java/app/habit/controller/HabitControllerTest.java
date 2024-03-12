@@ -1,8 +1,5 @@
 package app.habit.controller;
 
-import static app.habit.controller.Path.PHASE;
-import static app.habit.controller.Path.PRE_QUESTIONS;
-import static app.habit.domain.HabitFormingPhaseType.CONSIDERATION_STAGE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -10,10 +7,8 @@ import app.habit.dto.PhaseAnswerRq;
 import app.habit.dto.PhaseEvaluationAnswerRq;
 import app.habit.dto.PhaseEvaluationRq;
 import app.habit.dto.PhaseFeedbackRq;
-import app.habit.dto.PhaseFeedbackRs;
 import app.habit.dto.UserHabitPreQuestionRq;
 import io.restassured.RestAssured;
-import io.restassured.common.mapper.TypeRef;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
@@ -39,7 +34,7 @@ class HabitControllerTest {
         // when
         ExtractableResponse<Response> response = RestAssured
                 .given().pathParam("phaseId", pathVariable).log().all()
-                .when().get(PRE_QUESTIONS)
+                .when().get("/habit/coach/phase/{phaseId}")
                 .then().log().all()
                 .extract();
 
@@ -77,7 +72,7 @@ class HabitControllerTest {
         // when
         ExtractableResponse<Response> response = RestAssured
                 .given().body(givenRq).contentType(APPLICATION_JSON_VALUE)
-                .when().post(PHASE)
+                .when().post("/habit/coach/phase")
                 .then()
                 .extract();
 
@@ -119,7 +114,7 @@ class HabitControllerTest {
         // when
         ExtractableResponse<Response> response = RestAssured
                 .given().body(givenRq).contentType(APPLICATION_JSON_VALUE)
-                .when().post(Path.PHASE_QUESTION)
+                .when().post("/habit/coach/phase/question")
                 .then()
                 .extract();
 
@@ -175,7 +170,7 @@ class HabitControllerTest {
         // when
         ExtractableResponse<Response> response = RestAssured
                 .given().body(givenRq).contentType(APPLICATION_JSON_VALUE)
-                .when().post()
+                .when().post("/habit/coach/phase/feedback")
                 .then()
                 .extract();
 
