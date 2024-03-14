@@ -1,6 +1,5 @@
 package app.habit.dto;
 
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -8,11 +7,9 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserHabitPreQuestionRs {
+public class HabitPreQuestionRs {
 
-    private long feedbackModuleId;
     private String key;
     private String subject;
-    private List<PhaseQuestionRs> questions;
-    
+    private QuestionRs questionRs;
 }

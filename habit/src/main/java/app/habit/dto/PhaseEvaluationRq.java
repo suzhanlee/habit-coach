@@ -8,11 +8,8 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserHabitPreQuestionRs {
+public class PhaseEvaluationRq {
 
-    private long feedbackModuleId;
-    private String key;
-    private String subject;
-    private List<PhaseQuestionRs> questions;
-    
+    private long habitFormingPhaseId;
+    private List<PhaseEvaluationAnswerRq> answers;
 }
