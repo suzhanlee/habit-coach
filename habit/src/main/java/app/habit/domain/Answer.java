@@ -5,8 +5,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import java.util.Objects;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
@@ -16,33 +16,20 @@ public class Answer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "answer_id")
+    @Getter
     private Long id;
     private String answerKey;
     private String answer;
+
+    @Column(name = "subject_id")
+    private Long subjectId;
 
     public Answer(String answerKey, String answer) {
         this.answerKey = answerKey;
         this.answer = answer;
     }
 
-    public String createPrompt() {
-        return "Answer : " + this.answer + '\n';
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        Answer answer1 = (Answer) o;
-        return Objects.equals(answerKey, answer1.answerKey) && Objects.equals(answer, answer1.answer);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(answerKey, answer);
+    public void addSubjectId(Long subjectId) {
+        this.subjectId = subjectId;
     }
 }

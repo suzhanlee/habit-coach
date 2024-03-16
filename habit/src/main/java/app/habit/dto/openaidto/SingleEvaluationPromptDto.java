@@ -1,4 +1,4 @@
-package app.habit.dto;
+package app.habit.dto.openaidto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -7,8 +7,10 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class QuestionRs {
+public class SingleEvaluationPromptDto {
 
-    private String questionKey;
+    private String subjectKey;
+    private String subject;
     private String question;
+    private String answer;
 }

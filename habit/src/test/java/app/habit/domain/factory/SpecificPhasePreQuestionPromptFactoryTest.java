@@ -2,7 +2,6 @@ package app.habit.domain.factory;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import app.habit.domain.factory.SpecificPhasePreQuestionPromptFactory;
 import app.habit.service.gpt.request.PromptMessage;
 import app.habit.service.gpt.request.PromptRole;
 import app.habit.service.gpt.request.RequestPrompt;
