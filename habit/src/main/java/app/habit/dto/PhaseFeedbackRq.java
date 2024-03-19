@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class PhaseFeedbackRq {
 
+    private String habitFormingPhaseType;
     private long feedbackModuleId;
     private List<PhaseAnswerRq> phaseAnswers;
 }

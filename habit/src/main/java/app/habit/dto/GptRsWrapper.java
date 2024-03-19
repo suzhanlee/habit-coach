@@ -1,7 +1,5 @@
 package app.habit.dto;
 
-import app.habit.service.gpt.PreQuestionDeserializer;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -10,42 +8,41 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class GptRsWrapper<T> {
+public class GptRsWrapper {
 
     private String id;
     private String object;
     private long created;
     private String model;
-    private List<Choice<T>> choices;
+    private List<Choice> choices;
     private Usage usage;
     private String system_fingerprint;
 
-    public GptRsWrapper(List<Choice<T>> choices) {
+    public GptRsWrapper(List<Choice> choices) {
         this.choices = choices;
     }
 
     @Getter
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class Choice<T> {
+    public static class Choice {
         private long index;
-        private Message<T> message;
+        private Message message;
         private String logprobs;
         private String finish_reason;
 
-        public Choice(Message<T> message) {
+        public Choice(Message message) {
             this.message = message;
         }
 
         @Getter
         @NoArgsConstructor
         @AllArgsConstructor
-        public static class Message<T> {
+        public static class Message {
             private String role;
-            @JsonDeserialize(using = PreQuestionDeserializer.class)
-            private T content;
+            private String content;
 
-            public Message(T content) {
+            public Message (String content) {
                 this.content = content;
             }
         }

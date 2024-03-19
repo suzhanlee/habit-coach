@@ -4,6 +4,7 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -11,6 +12,8 @@ import jakarta.persistence.OneToMany;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
@@ -25,13 +28,38 @@ public class HabitAssessmentManager {
     @Enumerated
     private HabitFormingPhaseType phaseType;
 
+    @Column(columnDefinition = "TEXT")
     private String phaseDescription;
 
-    @OneToMany(mappedBy = "habitAssessmentManager",cascade = CascadeType.ALL, orphanRemoval = true)
+    @Getter
+    @OneToMany(mappedBy = "habitAssessmentManager",fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Subject> subjects = new ArrayList<>();
 
     public HabitAssessmentManager(List<Subject> subjects) {
+        addSubjects(subjects);
+    }
+
+    private void addSubjects(List<Subject> subjects) {
         this.subjects = subjects;
+        for (Subject subject : subjects) {
+            subject.addHabitAssessmentManager(this);
+        }
+    }
+
+    public void assess(String phaseType, String phaseDescription) {
+        this.phaseType = HabitFormingPhaseType.findType(phaseType);
+        this.phaseDescription = phaseDescription;
+    }
+
+    public void addAnswersAccordingToSubject(List<Answer> answers) {
+        for (int i = 0; i < this.subjects.size(); i++) {
+            this.subjects.get(i).addAnswer(answers.get(i));
+        }
+    }
+
+    public String createPrompt() {
+        return this.subjects.stream().map(Subject::createPrompt).map(prompt -> prompt + '\n')
+                .collect(Collectors.joining());
     }
 
     @Override

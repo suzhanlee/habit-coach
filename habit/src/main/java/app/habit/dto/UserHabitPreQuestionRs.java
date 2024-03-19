@@ -13,5 +13,6 @@ public class UserHabitPreQuestionRs {
     private long feedbackModuleId;
     private String key;
     private String subject;
-    private List<PhaseQuestionRs> phaseQuestions;
+    private List<PhaseQuestionRs> questions;
+    
 }

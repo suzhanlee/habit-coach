@@ -9,6 +9,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class PhaseQuestionRs {
 
-    private String key;
+    private String questionKey;
     private String question;
 }

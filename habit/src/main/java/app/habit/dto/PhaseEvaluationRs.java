@@ -1,16 +1,14 @@
 package app.habit.dto;
 
-import app.habit.domain.HabitFormingPhaseType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 public class PhaseEvaluationRs {
-
-    private long habitAssessmentManagerId;
-    private HabitFormingPhaseType phaseType;
+    private String phaseType;
     private String phaseDescription;
 }

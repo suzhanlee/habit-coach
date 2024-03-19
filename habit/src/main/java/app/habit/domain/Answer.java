@@ -25,6 +25,10 @@ public class Answer {
         this.answer = answer;
     }
 
+    public String createPrompt() {
+        return "Answer : " + this.answer + '\n';
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

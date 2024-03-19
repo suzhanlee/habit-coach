@@ -23,6 +23,10 @@ public class Question {
         this.question = question;
     }
 
+    public String createPrompt() {
+        return "Question : " + question + '\n';
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
