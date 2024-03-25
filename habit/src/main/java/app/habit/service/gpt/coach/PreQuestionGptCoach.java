@@ -1,8 +1,8 @@
 package app.habit.service.gpt.coach;
 
-import app.habit.dto.GptRsWrapper;
-import app.habit.dto.GptRsWrapper.Choice.Message;
-import app.habit.dto.HabitPreQuestionRs;
+import app.habit.dto.openaidto.GptRsWrapper;
+import app.habit.dto.openaidto.GptRsWrapper.Choice.Message;
+import app.habit.dto.openaidto.HabitPreQuestionRs;
 import app.habit.service.gpt.request.RequestPrompt;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;

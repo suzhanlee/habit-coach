@@ -22,15 +22,11 @@ public class Habit {
 
     private String name;
 
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    private HabitFormingPhase habitFormingPhase;
-
     @Column(name = "user_id")
     private Long userId;
 
     public Habit(String habitName, long userId) {
         this.name = habitName;
-        this.habitFormingPhase = new HabitFormingPhase();
         this.userId = userId;
     }
 

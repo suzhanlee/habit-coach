@@ -30,10 +30,6 @@ public class Question {
         this.question = question;
     }
 
-    public String createPrompt() {
-        return "Question : " + question + '\n';
-    }
-
     public void addSubjectId(long subjectId) {
         this.subjectId = subjectId;
     }

@@ -20,11 +20,13 @@ public class Track {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "track_id")
     private Long id;
+
     @Enumerated(EnumType.STRING)
     private TrackType trackType;
+
     private LocalDate trackDateTime;
 
-    @Column
+    @Column(name = "goal_tracker_id")
     private Long goalTrackerId;
 
     public Track(String trackType, LocalDate trackDateTime, Long goalTrackerId) {
