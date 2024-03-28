@@ -26,5 +26,7 @@ dependencies {
     // test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'io.rest-assured:rest-assured'
+
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.12.5'
 }
 

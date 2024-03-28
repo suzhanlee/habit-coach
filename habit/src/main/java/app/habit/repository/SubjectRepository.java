@@ -10,8 +10,9 @@ import org.springframework.data.repository.query.Param;
 
 public interface SubjectRepository extends JpaRepository<Subject, Long> {
 
-    @Query("SELECT s FROM Subject s WHERE s.subjectKey = :key")
-    Optional<Subject> findByKey(@Param("key") String key);
+    @Query("SELECT s FROM Subject s WHERE s.habitAssessmentManagerId = :habitAssessmentManagerId AND s.subjectKey = :key")
+    Optional<Subject> findByKey(@Param("habitAssessmentManagerId") Long habitAssessmentManagerId,
+                                @Param("key") String key);
 
     @Query("SELECT new app.habit.dto.openaidto.SingleEvaluationPromptDto(" +
             "s.subjectKey, " +

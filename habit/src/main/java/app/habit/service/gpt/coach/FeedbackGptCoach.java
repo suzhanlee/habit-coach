@@ -20,7 +20,7 @@ import org.springframework.web.client.RestTemplate;
 @RequiredArgsConstructor
 public class FeedbackGptCoach {
 
-    private static final String apiKey = "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";
+    private static final String apiKey = "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";
 
     private final RestTemplate restTemplate;
 

@@ -94,13 +94,15 @@ public class OpenAiService {
 
     public PhaseEvaluationRs evaluateHabitPhase(PhaseEvaluationRq rq) {
         // find habitFormingPhase
+        long habitAssessmentManagerId = rq.getHabitAssessmentManagerId();
         HabitAssessmentManager habitAssessmentManager = habitAssessmentManagerRepository.findById(
-                        rq.getHabitAssessmentManagerId())
+                        habitAssessmentManagerId)
                 .orElseThrow();
 
         // save answers according to subject
         for (PhaseEvaluationAnswerRq phaseEvaluationAnswerRq : rq.getAnswers()) {
-            answerService.save(phaseEvaluationAnswerRq.getKey(), phaseEvaluationAnswerRq.getUserAnswer());
+            answerService.save(phaseEvaluationAnswerRq.getKey(), phaseEvaluationAnswerRq.getUserAnswer(),
+                    habitAssessmentManagerId);
         }
 
         // request -> gpt
