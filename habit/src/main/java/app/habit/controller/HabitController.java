@@ -8,6 +8,8 @@ import app.habit.dto.habitdto.SpecificHabitTrackListRq;
 import app.habit.dto.habitdto.SpecificHabitTrackListRs;
 import app.habit.dto.habitdto.UserHabitListRq;
 import app.habit.dto.habitdto.UserHabitListRs;
+import app.habit.dto.habitdto.UserHabitPhaseFeedbackRq;
+import app.habit.dto.habitdto.UserHabitPhaseFeedbackRs;
 import app.habit.dto.openaidto.SpecificUserHabitInfoRs;
 import app.habit.service.HabitService;
 import java.util.List;
@@ -53,5 +55,10 @@ public class HabitController {
     @GetMapping("/habit/{habitId}")
     public SpecificUserHabitInfoRs getSpecificUserHabitInfo(@PathVariable("habitId") long habitId) {
         return habitService.getSpecificUserHabitInfo(habitId);
+    }
+
+    @GetMapping("/habit/coach")
+    public UserHabitPhaseFeedbackRs getUserHabitPhaseFeedback(@RequestBody UserHabitPhaseFeedbackRq rq) {
+        return habitService.getUserHabitPhaseFeedback(rq);
     }
 }

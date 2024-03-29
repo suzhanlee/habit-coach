@@ -1,20 +1,30 @@
 package app.habit.service;
 
+import app.habit.domain.FeedbackSession;
 import app.habit.domain.GoalTracker;
 import app.habit.domain.Habit;
+import app.habit.domain.HabitFormingPhase;
 import app.habit.domain.Track;
 import app.habit.domain.User;
 import app.habit.dto.habitdto.CreateHabitRq;
 import app.habit.dto.habitdto.CreateHabitRs;
 import app.habit.dto.habitdto.CreateHabitTrackRq;
 import app.habit.dto.habitdto.CreateHabitTrackRs;
+import app.habit.dto.habitdto.FeedbackSessionDto;
 import app.habit.dto.habitdto.SpecificHabitTrackListRq;
 import app.habit.dto.habitdto.SpecificHabitTrackListRs;
 import app.habit.dto.habitdto.UserGoalTrackerDto;
+import app.habit.dto.habitdto.UserHabitFeedbackDto;
+import app.habit.dto.habitdto.UserHabitFeedbackModule;
 import app.habit.dto.habitdto.UserHabitFormingPhaseDto;
 import app.habit.dto.habitdto.UserHabitListRq;
 import app.habit.dto.habitdto.UserHabitListRs;
+import app.habit.dto.habitdto.UserHabitPhaseFeedbackRq;
+import app.habit.dto.habitdto.UserHabitPhaseFeedbackRs;
+import app.habit.dto.habitdto.UserPhaseInfoDto;
 import app.habit.dto.openaidto.SpecificUserHabitInfoRs;
+import app.habit.repository.FeedbackModuleRepository;
+import app.habit.repository.FeedbackSessionRepository;
 import app.habit.repository.GoalTrackerRepository;
 import app.habit.repository.HabitAssessmentManagerRepository;
 import app.habit.repository.HabitFormingPhaseRepository;
@@ -38,6 +48,9 @@ public class HabitService {
 
     private final HabitFormingPhaseRepository habitFormingPhaseRepository;
     private final HabitAssessmentManagerRepository habitAssessmentManagerRepository;
+
+    private final FeedbackModuleRepository feedbackModuleRepository;
+    private final FeedbackSessionRepository feedbackSessionRepository;
 
     public CreateHabitRs createHabit(CreateHabitRq rq) {
         User user = userRepository.findById(rq.getUserId()).orElseThrow();
@@ -78,7 +91,7 @@ public class HabitService {
     public SpecificUserHabitInfoRs getSpecificUserHabitInfo(long habitId) {
         Habit habit = habitRepository.findById(habitId).orElseThrow();
 
-        UserHabitFormingPhaseDto phaseDto = habitAssessmentManagerRepository.findDtoByHabitFormingPhaseId(
+        UserHabitFormingPhaseDto phaseDto = habitAssessmentManagerRepository.findPhaseDtoByHabitFormingPhaseId(
                 habitFormingPhaseRepository.findIdByHabitId(habit.getId()).orElseThrow()
         );
 
@@ -87,6 +100,32 @@ public class HabitService {
         );
 
         return new SpecificUserHabitInfoRs(habit.getName(), phaseDto, goalTrackerDto);
+    }
+
+    public UserHabitPhaseFeedbackRs getUserHabitPhaseFeedback(UserHabitPhaseFeedbackRq rq) {
+        HabitFormingPhase habitFormingPhase = habitFormingPhaseRepository.findById(rq.getHabitFormingPhaseId())
+                .orElseThrow();
+
+        UserPhaseInfoDto userPhaseInfoDto = habitAssessmentManagerRepository.findUserPhaseInfoDtoByHabitFormingPhaseId(
+                habitFormingPhase.getId());
+
+        List<UserHabitFeedbackDto> userHabitFeedbackDtos = feedbackModuleRepository.findUserHabitFeedbackDtoByHabitFormingPhaseId(
+                habitFormingPhase.getId());
+
+        List<UserHabitFeedbackModule> userHabitFeedbackModules = userHabitFeedbackDtos.stream()
+                .map(userHabitFeedbackDto -> {
+                    List<FeedbackSession> feedbackSessions = feedbackSessionRepository.findFeedbackSessionsByFeedbackModuleId(
+                            userHabitFeedbackDto.getFeedbackModuleId());
+
+                    List<FeedbackSessionDto> feedbackSessionDtos = feedbackSessions.stream()
+                            .map(FeedbackSessionDto::new)
+                            .toList();
+
+                    return new UserHabitFeedbackModule(userHabitFeedbackDto, feedbackSessionDtos);
+                })
+                .toList();
+
+        return new UserHabitPhaseFeedbackRs(userPhaseInfoDto, userHabitFeedbackModules);
     }
 }
 

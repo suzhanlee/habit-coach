@@ -1,6 +1,7 @@
 package app.habit.repository;
 
 import app.habit.domain.FeedbackSession;
+import app.habit.dto.habitdto.FeedbackSessionDto;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
