@@ -4,8 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import app.habit.domain.FeedbackSession;
 import app.habit.domain.GoalTracker;
 import app.habit.domain.Habit;
+import app.habit.domain.HabitFormingPhase;
+import app.habit.domain.HabitFormingPhaseType;
 import app.habit.domain.Track;
 import app.habit.domain.TrackType;
 import app.habit.domain.User;
@@ -13,11 +16,20 @@ import app.habit.dto.habitdto.CreateHabitRq;
 import app.habit.dto.habitdto.CreateHabitRs;
 import app.habit.dto.habitdto.CreateHabitTrackRq;
 import app.habit.dto.habitdto.CreateHabitTrackRs;
+import app.habit.dto.habitdto.FeedbackSessionDto;
 import app.habit.dto.habitdto.SpecificHabitTrackListRq;
 import app.habit.dto.habitdto.SpecificHabitTrackListRs;
+import app.habit.dto.habitdto.UserHabitFeedbackDto;
 import app.habit.dto.habitdto.UserHabitListRq;
 import app.habit.dto.habitdto.UserHabitListRs;
+import app.habit.dto.habitdto.UserHabitPhaseFeedbackRq;
+import app.habit.dto.habitdto.UserHabitPhaseFeedbackRs;
+import app.habit.dto.habitdto.UserPhaseInfoDto;
+import app.habit.repository.FeedbackModuleRepository;
+import app.habit.repository.FeedbackSessionRepository;
 import app.habit.repository.GoalTrackerRepository;
+import app.habit.repository.HabitAssessmentManagerRepository;
+import app.habit.repository.HabitFormingPhaseRepository;
 import app.habit.repository.HabitRepository;
 import app.habit.repository.TrackRepository;
 import app.habit.repository.UserRepository;
@@ -47,6 +59,18 @@ class HabitServiceTest {
 
     @Mock
     private TrackRepository trackRepository;
+
+    @Mock
+    private HabitFormingPhaseRepository habitFormingPhaseRepository;
+
+    @Mock
+    private HabitAssessmentManagerRepository habitAssessmentManagerRepository;
+
+    @Mock
+    private FeedbackModuleRepository feedbackModuleRepository;
+
+    @Mock
+    private FeedbackSessionRepository feedbackSessionRepository;
 
     @InjectMocks
     private HabitService habitService;
@@ -189,5 +213,72 @@ class HabitServiceTest {
         // then
         verify(trackRepository).findTracksByGoalTrackerIdAndYearAndMonth(goalTrackerId, year, month);
         assertThat(result).isEqualTo(rs);
+    }
+
+    @Test
+    @DisplayName("사용자의 특정 습관에 받은 피드백 정보를 가져온다.")
+    void find_user_habit_feedback_info() {
+        // given
+        long givenHabitFormingPhaseId = 1;
+        UserHabitPhaseFeedbackRq request = new UserHabitPhaseFeedbackRq(givenHabitFormingPhaseId);
+        HabitFormingPhase habitFormingPhase = new HabitFormingPhase(givenHabitFormingPhaseId);
+
+        HabitFormingPhaseType phaseType = HabitFormingPhaseType.ACTION_STAGE;
+        String description = "실행 단계에 대한 설명";
+        UserPhaseInfoDto userPhaseInfoDto = new UserPhaseInfoDto(phaseType, description);
+
+        UserHabitFeedbackDto userHabitFeedbackDto1 = new UserHabitFeedbackDto(1L, "실행 단계 주제 1", "실행 단계 주제 1 피드백");
+        FeedbackSession feedbackSession11 = new FeedbackSession("1- first session", "question11", "answer11");
+        FeedbackSession feedbackSession12 = new FeedbackSession("1- second session", "question12", "answer12");
+        FeedbackSession feedbackSession13 = new FeedbackSession("1- third session", "question13", "answer13");
+
+        UserHabitFeedbackDto userHabitFeedbackDto2 = new UserHabitFeedbackDto(2L, "실행 단계 주제 2", "실행 단계 주제 2 피드백");
+        FeedbackSession feedbackSession21 = new FeedbackSession("2- second session", "question21", "answer21");
+        FeedbackSession feedbackSession22 = new FeedbackSession("2- first session", "question22", "answer22");
+        FeedbackSession feedbackSession23 = new FeedbackSession("2- first session", "question23", "answer23");
+
+        UserHabitFeedbackDto userHabitFeedbackDto3 = new UserHabitFeedbackDto(3L, "실행 단계 주제 3", "실행 단계 주제 3 피드백");
+        FeedbackSession feedbackSession31 = new FeedbackSession("3- third session", "question31", "answer31");
+        FeedbackSession feedbackSession32 = new FeedbackSession("3- first session", "question32", "answer32");
+        FeedbackSession feedbackSession33 = new FeedbackSession("3- first session", "question33", "answer33");
+
+
+        // when
+        when(habitFormingPhaseRepository.findById(givenHabitFormingPhaseId))
+                .thenReturn(Optional.of(habitFormingPhase));
+        when(habitAssessmentManagerRepository.findUserPhaseInfoDtoByHabitFormingPhaseId(givenHabitFormingPhaseId))
+                .thenReturn(userPhaseInfoDto);
+        when(feedbackModuleRepository.findUserHabitFeedbackDtoByHabitFormingPhaseId(givenHabitFormingPhaseId))
+                .thenReturn(List.of(userHabitFeedbackDto1, userHabitFeedbackDto2, userHabitFeedbackDto3));
+
+        when(feedbackSessionRepository.findFeedbackSessionsByFeedbackModuleId(userHabitFeedbackDto1.getFeedbackModuleId()))
+                .thenReturn(List.of(feedbackSession11, feedbackSession12, feedbackSession13));
+        when(feedbackSessionRepository.findFeedbackSessionsByFeedbackModuleId(userHabitFeedbackDto2.getFeedbackModuleId()))
+                .thenReturn(List.of(feedbackSession21, feedbackSession22, feedbackSession23));
+        when(feedbackSessionRepository.findFeedbackSessionsByFeedbackModuleId(userHabitFeedbackDto3.getFeedbackModuleId()))
+                .thenReturn(List.of(feedbackSession31, feedbackSession32, feedbackSession33));
+
+        UserHabitPhaseFeedbackRs result = habitService.getUserHabitPhaseFeedback(request);
+
+        // when
+        assertThat(result.getHabitFormingPhaseType()).isEqualTo("ACTION_STAGE");
+        assertThat(result.getDescription()).isEqualTo(description);
+
+        assertThat(result.getUserHabitFeedbackModules()).hasSize(3);
+        assertThat(result.getUserHabitFeedbackModules().get(0).getUserHabitFeedbackDto()).isEqualTo(new UserHabitFeedbackDto(1L, "실행 단계 주제 1", "실행 단계 주제 1 피드백"));
+        assertThat(result.getUserHabitFeedbackModules().get(1).getUserHabitFeedbackDto()).isEqualTo(new UserHabitFeedbackDto(2L, "실행 단계 주제 2", "실행 단계 주제 2 피드백"));
+        assertThat(result.getUserHabitFeedbackModules().get(2).getUserHabitFeedbackDto()).isEqualTo(new UserHabitFeedbackDto(3L, "실행 단계 주제 3", "실행 단계 주제 3 피드백"));
+
+        assertThat(result.getUserHabitFeedbackModules().get(0).getFeedbackSessionDtos().get(0)).isEqualTo(new FeedbackSessionDto("question11", "answer11"));
+        assertThat(result.getUserHabitFeedbackModules().get(0).getFeedbackSessionDtos().get(1)).isEqualTo(new FeedbackSessionDto("question12", "answer12"));
+        assertThat(result.getUserHabitFeedbackModules().get(0).getFeedbackSessionDtos().get(2)).isEqualTo(new FeedbackSessionDto("question13", "answer13"));
+
+        assertThat(result.getUserHabitFeedbackModules().get(1).getFeedbackSessionDtos().get(0)).isEqualTo(new FeedbackSessionDto("question21", "answer21"));
+        assertThat(result.getUserHabitFeedbackModules().get(1).getFeedbackSessionDtos().get(1)).isEqualTo(new FeedbackSessionDto("question22", "answer22"));
+        assertThat(result.getUserHabitFeedbackModules().get(1).getFeedbackSessionDtos().get(2)).isEqualTo(new FeedbackSessionDto("question23", "answer23"));
+
+        assertThat(result.getUserHabitFeedbackModules().get(2).getFeedbackSessionDtos().get(0)).isEqualTo(new FeedbackSessionDto("question31", "answer31"));
+        assertThat(result.getUserHabitFeedbackModules().get(2).getFeedbackSessionDtos().get(1)).isEqualTo(new FeedbackSessionDto("question32", "answer32"));
+        assertThat(result.getUserHabitFeedbackModules().get(2).getFeedbackSessionDtos().get(2)).isEqualTo(new FeedbackSessionDto("question33", "answer33"));
     }
 }
