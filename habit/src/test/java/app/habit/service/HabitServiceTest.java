@@ -22,7 +22,6 @@ import app.habit.dto.habitdto.SpecificHabitTrackListRs;
 import app.habit.dto.habitdto.UserHabitFeedbackDto;
 import app.habit.dto.habitdto.UserHabitListRq;
 import app.habit.dto.habitdto.UserHabitListRs;
-import app.habit.dto.habitdto.UserHabitPhaseFeedbackRq;
 import app.habit.dto.habitdto.UserHabitPhaseFeedbackRs;
 import app.habit.dto.habitdto.UserPhaseInfoDto;
 import app.habit.repository.FeedbackModuleRepository;
@@ -220,7 +219,6 @@ class HabitServiceTest {
     void find_user_habit_feedback_info() {
         // given
         long givenHabitFormingPhaseId = 1;
-        UserHabitPhaseFeedbackRq request = new UserHabitPhaseFeedbackRq(givenHabitFormingPhaseId);
         HabitFormingPhase habitFormingPhase = new HabitFormingPhase(givenHabitFormingPhaseId);
 
         HabitFormingPhaseType phaseType = HabitFormingPhaseType.ACTION_STAGE;
@@ -258,7 +256,7 @@ class HabitServiceTest {
         when(feedbackSessionRepository.findFeedbackSessionsByFeedbackModuleId(userHabitFeedbackDto3.getFeedbackModuleId()))
                 .thenReturn(List.of(feedbackSession31, feedbackSession32, feedbackSession33));
 
-        UserHabitPhaseFeedbackRs result = habitService.getUserHabitPhaseFeedback(request);
+        UserHabitPhaseFeedbackRs result = habitService.getUserHabitPhaseFeedback(givenHabitFormingPhaseId);
 
         // when
         assertThat(result.getHabitFormingPhaseType()).isEqualTo("ACTION_STAGE");

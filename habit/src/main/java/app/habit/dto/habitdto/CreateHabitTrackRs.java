@@ -1,6 +1,5 @@
 package app.habit.dto.habitdto;
 
-import app.habit.domain.GoalTracker;
 import app.habit.domain.Track;
 import java.util.Objects;
 import lombok.AllArgsConstructor;
@@ -15,8 +14,8 @@ public class CreateHabitTrackRs {
     private long goalTrackerId;
     private long trackId;
 
-    public CreateHabitTrackRs(GoalTracker goalTracker, Track track) {
-        this.goalTrackerId = goalTracker.getId();
+    public CreateHabitTrackRs(Long goalTrackerId, Track track) {
+        this.goalTrackerId = goalTrackerId;
         this.trackId = track.getId();
     }
 

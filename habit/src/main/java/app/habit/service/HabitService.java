@@ -1,7 +1,6 @@
 package app.habit.service;
 
 import app.habit.domain.FeedbackSession;
-import app.habit.domain.GoalTracker;
 import app.habit.domain.Habit;
 import app.habit.domain.HabitFormingPhase;
 import app.habit.domain.Track;
@@ -19,7 +18,6 @@ import app.habit.dto.habitdto.UserHabitFeedbackModule;
 import app.habit.dto.habitdto.UserHabitFormingPhaseDto;
 import app.habit.dto.habitdto.UserHabitListRq;
 import app.habit.dto.habitdto.UserHabitListRs;
-import app.habit.dto.habitdto.UserHabitPhaseFeedbackRq;
 import app.habit.dto.habitdto.UserHabitPhaseFeedbackRs;
 import app.habit.dto.habitdto.UserPhaseInfoDto;
 import app.habit.dto.openaidto.SpecificUserHabitInfoRs;
@@ -46,6 +44,8 @@ public class HabitService {
     private final GoalTrackerRepository goalTrackerRepository;
     private final TrackRepository trackRepository;
 
+    private final GoalTrackerService goalTrackerService;
+
     private final HabitFormingPhaseRepository habitFormingPhaseRepository;
     private final HabitAssessmentManagerRepository habitAssessmentManagerRepository;
 
@@ -70,14 +70,12 @@ public class HabitService {
 
     public CreateHabitTrackRs trackHabit(CreateHabitTrackRq rq) {
         Habit habit = habitRepository.findById(rq.getHabitId()).orElseThrow();
+        Long goalTrackerId = goalTrackerService.findGoalTracker(habit);
 
-        GoalTracker goalTracker = new GoalTracker(habit.getId());
-        goalTrackerRepository.save(goalTracker);
-
-        Track track = new Track(rq.getTrackType(), rq.getTrackDateTime(), goalTracker.getId());
+        Track track = new Track(rq.getTrackType(), rq.getTrackDateTime(), goalTrackerId);
         trackRepository.save(track);
 
-        return new CreateHabitTrackRs(goalTracker, track);
+        return new CreateHabitTrackRs(goalTrackerId, track);
     }
 
     public List<SpecificHabitTrackListRs> getSpecificHabitTrackList(SpecificHabitTrackListRq rq) {
@@ -102,8 +100,8 @@ public class HabitService {
         return new SpecificUserHabitInfoRs(habit.getName(), phaseDto, goalTrackerDto);
     }
 
-    public UserHabitPhaseFeedbackRs getUserHabitPhaseFeedback(UserHabitPhaseFeedbackRq rq) {
-        HabitFormingPhase habitFormingPhase = habitFormingPhaseRepository.findById(rq.getHabitFormingPhaseId())
+    public UserHabitPhaseFeedbackRs getUserHabitPhaseFeedback(Long habitFormingPhaseId) {
+        HabitFormingPhase habitFormingPhase = habitFormingPhaseRepository.findById(habitFormingPhaseId)
                 .orElseThrow();
 
         UserPhaseInfoDto userPhaseInfoDto = habitAssessmentManagerRepository.findUserPhaseInfoDtoByHabitFormingPhaseId(

@@ -57,8 +57,8 @@ public class HabitController {
         return habitService.getSpecificUserHabitInfo(habitId);
     }
 
-    @GetMapping("/habit/coach")
-    public UserHabitPhaseFeedbackRs getUserHabitPhaseFeedback(@RequestBody UserHabitPhaseFeedbackRq rq) {
-        return habitService.getUserHabitPhaseFeedback(rq);
+    @GetMapping("/habit/feedback/{habitFormingPhaseId}")
+    public UserHabitPhaseFeedbackRs getUserHabitPhaseFeedback(@PathVariable("habitFormingPhaseId") Long habitFormingPhaseId) {
+        return habitService.getUserHabitPhaseFeedback(habitFormingPhaseId);
     }
 }
