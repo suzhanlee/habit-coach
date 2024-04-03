@@ -73,7 +73,7 @@ class OpenAiServiceTest {
         when(promptFactory.create(type, prompt)).thenReturn(requestPrompt);
         when(preQuestionGptCoach.requestPreQuestions(requestPrompt, url)).thenReturn(preQuestionRs);
         when(habitRepository.findById(habitId)).thenReturn(Optional.of(new Habit()));
-        when(habitFormingPhaseService.save(anyLong())).thenReturn(1L);
+        when(habitFormingPhaseService.createHabitFormingPhase(anyLong())).thenReturn(1L);
         when(habitAssessmentManagerService.save(anyLong())).thenReturn(1L);
         when(subjectService.save(anyString(), anyString(), anyLong())).thenReturn(subjectId += 1);
         when(questionService.save(anyString(), anyString(), anyLong())).thenReturn(questionId += 1);
@@ -86,7 +86,7 @@ class OpenAiServiceTest {
         verify(promptFactory, times(1)).create(type, prompt);
         verify(preQuestionGptCoach, times(1)).requestPreQuestions(requestPrompt, url);
         verify(habitRepository, times(1)).findById(habitId);
-        verify(habitFormingPhaseService, times(1)).save(anyLong());
+        verify(habitFormingPhaseService, times(1)).createHabitFormingPhase(anyLong());
         verify(habitAssessmentManagerService, times(1)).save(anyLong());
         verify(subjectService, times(preQuestionRs.size())).save(anyString(), anyString(), anyLong());
         verify(questionService, times(preQuestionRs.size())).save(anyString(), anyString(), anyLong());

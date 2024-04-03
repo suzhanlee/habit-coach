@@ -37,7 +37,7 @@ class HabitFormingPhaseServiceTest {
             return phase;
         });
 
-        Long result = habitFormingPhaseService.save(habitId);
+        Long result = habitFormingPhaseService.createHabitFormingPhase(habitId);
 
         // then
         assertThat(result).isEqualTo(12);

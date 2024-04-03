@@ -137,22 +137,42 @@ class HabitControllerTest {
         }
     }
 
-//    @Test
-//    @DisplayName("사용자의 특정 습관을 상세조회해 가져온다.")
-//    void get_specific_user_habit_info() {
-//        // given
-//        long pathVariable = 1;
-//
-//        // when
-//        ExtractableResponse<Response> response = RestAssured
-//                .given().pathParam("habitId", pathVariable)
-//                .when().get("/habit/{habitId}")
-//                .then().log().all()
-//                .extract();
-//
-//        // then
-//        assertThat(response.statusCode()).isEqualTo(HttpStatus.OK.value());
-//    }
+    @Test
+    @DisplayName("사용자의 특정 습관을 상세조회해 가져온다.")
+    void get_specific_user_habit_info() {
+        // given
+        long pathVariable = 1;
+
+        // when
+        ExtractableResponse<Response> response = RestAssured
+                .given().pathParam("habitId", pathVariable)
+                .when().get("/habit/{habitId}")
+                .then().log().all()
+                .extract();
+
+        // then
+        assertThat(response.statusCode()).isEqualTo(HttpStatus.OK.value());
+        JsonPath actual = response.jsonPath();
+        assertThat(actual.getString("habitName")).isNotNull();
+        assertThatUserHabitFormingPhaseDto(actual);
+        assertThatUserGoalTrackerDto(actual);
+    }
+
+    private void assertThatUserHabitFormingPhaseDto(JsonPath actual) {
+        Map<String, Object> userHabitFormingPhaseDto = (Map<String, Object>) actual.get("userHabitFormingPhaseDto");
+        assertThat(userHabitFormingPhaseDto).containsKeys("habitFormingPhaseId", "habitAssessmentManagerId", "habitFormingPhaseType");
+        assertThat(userHabitFormingPhaseDto.get("habitFormingPhaseId")).isNotNull();
+        assertThat(userHabitFormingPhaseDto.get("habitAssessmentManagerId")).isNotNull();
+        assertThat(userHabitFormingPhaseDto.get("habitFormingPhaseType")).isNotNull();
+    }
+
+    private void assertThatUserGoalTrackerDto(JsonPath actual) {
+        Map<String, Object> userGoalTrackerDto = (Map<String, Object>) actual.get("userGoalTrackerDto");
+        assertThat(userGoalTrackerDto).containsKeys("goalTrackerId", "smartId", "executionIntentionId");
+        assertThat(userGoalTrackerDto.get("goalTrackerId")).isNotNull();
+        assertThat(userGoalTrackerDto.get("smartId")).isNotNull();
+        assertThat(userGoalTrackerDto.get("executionIntentionId")).isNotNull();
+    }
 
     @Test
     @DisplayName("사용자의 특정 습관의 습관 형성 단계 피드백을 가져온다.")

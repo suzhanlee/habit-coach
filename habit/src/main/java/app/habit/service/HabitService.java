@@ -70,7 +70,7 @@ public class HabitService {
 
     public CreateHabitTrackRs trackHabit(CreateHabitTrackRq rq) {
         Habit habit = habitRepository.findById(rq.getHabitId()).orElseThrow();
-        Long goalTrackerId = goalTrackerService.findGoalTracker(habit);
+        Long goalTrackerId = goalTrackerService.findGoalTrackerIdOrCreate(habit);
 
         Track track = new Track(rq.getTrackType(), rq.getTrackDateTime(), goalTrackerId);
         trackRepository.save(track);

@@ -33,6 +33,7 @@ import app.habit.service.gpt.coach.PhaseGptCoach;
 import app.habit.service.gpt.coach.PreQuestionGptCoach;
 import app.habit.service.gpt.request.RequestPrompt;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -77,7 +78,7 @@ public class OpenAiService {
         Habit findHabit = habitRepository.findById(habitId).orElseThrow();
 
         // save
-        Long habitFormingPhaseId = habitFormingPhaseService.save(findHabit.getId());
+        Long habitFormingPhaseId = habitFormingPhaseService.findHabitFormingPhaseIdOrCreate(findHabit.getId());
         Long habitAssessmentManagerId = habitAssessmentManagerService.save(habitFormingPhaseId);
 
         for (HabitPreQuestionRs preQuestionR : preQuestionRs) {
