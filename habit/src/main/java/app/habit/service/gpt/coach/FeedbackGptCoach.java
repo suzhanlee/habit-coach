@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.Collections;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -20,7 +21,8 @@ import org.springframework.web.client.RestTemplate;
 @RequiredArgsConstructor
 public class FeedbackGptCoach {
 
-    private static final String apiKey = "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";
+    @Value("${app.api-key}")
+    private String apiKey;
 
     private final RestTemplate restTemplate;
 

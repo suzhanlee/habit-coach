@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -22,7 +23,8 @@ import org.springframework.web.client.RestTemplate;
 @RequiredArgsConstructor
 public class PreQuestionGptCoach {
 
-    private static final String apiKey = "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";
+    @Value("${app.api-key}")
+    private String apiKey;
 
     private final RestTemplate restTemplate;
 
