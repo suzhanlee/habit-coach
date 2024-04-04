@@ -1,14 +1,15 @@
 package app.habit.service.gpt.coach;
 
-import app.habit.dto.GptRsWrapper;
-import app.habit.dto.GptRsWrapper.Choice.Message;
-import app.habit.dto.PhaseFeedbackRs;
+import app.habit.dto.openaidto.GptRsWrapper;
+import app.habit.dto.openaidto.GptRsWrapper.Choice.Message;
+import app.habit.dto.openaidto.PhaseFeedbackRs;
 import app.habit.service.gpt.request.RequestPrompt;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.Collections;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -20,7 +21,8 @@ import org.springframework.web.client.RestTemplate;
 @RequiredArgsConstructor
 public class FeedbackGptCoach {
 
-    private static final String apiKey = "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";
+    @Value("${app.api-key}")
+    private String apiKey;
 
     private final RestTemplate restTemplate;
 

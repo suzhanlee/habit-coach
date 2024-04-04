@@ -3,194 +3,228 @@ package app.habit.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
-import app.habit.dto.PhaseAnswerRq;
-import app.habit.dto.PhaseEvaluationAnswerRq;
-import app.habit.dto.PhaseEvaluationRq;
-import app.habit.dto.PhaseFeedbackRq;
-import app.habit.dto.UserHabitPreQuestionRq;
+import app.habit.dto.habitdto.CreateHabitRq;
+import app.habit.dto.habitdto.CreateHabitTrackRq;
+import app.habit.dto.habitdto.SpecificHabitTrackListRq;
+import app.habit.dto.habitdto.UserHabitListRq;
 import io.restassured.RestAssured;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
-import java.util.ArrayList;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.http.HttpStatus;
 
-@DisplayName("gpt api 관련 기능")
+@DisplayName("habit api 관련 기능")
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 class HabitControllerTest {
 
     @Test
-    @DisplayName("습관 형성 모델 평가를 위한 사전 질문을 가져온다.")
-    void get_pre_questions_for_habit_formation_model_evaluation() {
+    @DisplayName("사용자가 만들고 싶은 습관을 생성한다.")
+    void create_habit() {
         // given
-        long pathVariable = 1;
+        CreateHabitRq givenRq = new CreateHabitRq(1L, "exercise");
 
         // when
         ExtractableResponse<Response> response = RestAssured
-                .given().pathParam("phaseId", pathVariable).log().all()
-                .when().get("/habit/coach/phase/{phaseId}")
+                .given().body(givenRq).contentType(APPLICATION_JSON_VALUE)
+                .when().post("/habit")
                 .then().log().all()
                 .extract();
 
         // then
         assertThat(response.statusCode()).isEqualTo(HttpStatus.OK.value());
-        List<Map<String, Object>> questions = response.jsonPath().getList("$");
-        assertThat(questions).isNotEmpty();
-        assertQuestions(questions);
-    }
-
-    private void assertQuestions(List<Map<String, Object>> questions) {
-        questions.forEach(this::assertPreQuestionStructure);
-    }
-
-    private void assertPreQuestionStructure(Map<String, Object> question) {
-        assertThat(question).containsKeys("key", "subject", "questionRs");
-        assertThat(question.get("key")).isNotNull();
-        assertThat(question.get("subject")).isNotNull();
-        assertQuestionRs(question);
-    }
-
-    private void assertQuestionRs(Map<String, Object> question) {
-        Map<String, Object> questionRs = (Map<String, Object>) question.get("questionRs");
-        assertThat(questionRs).containsKeys("questionKey", "question");
-        assertThat(questionRs.get("questionKey")).isNotNull();
-        assertThat(questionRs.get("question")).isNotNull();
+        JsonPath actual = response.jsonPath();
+        assertThat(actual.getLong("habitId")).isNotNull();
     }
 
     @Test
-    @DisplayName("사용자의 습관 수준을 습관 형성 모델에 따라 평가한다.")
-    void evaluate_user_habit_phase() {
+    @DisplayName("사용자의 습관 목록을 가져온다.")
+    void get_user_habit_list() {
         // given
-        PhaseEvaluationRq givenRq = createPhaseEvaluationRq(1, createPhaseEvaluationAnswers());
+        UserHabitListRq givenRq = new UserHabitListRq(1);
 
         // when
         ExtractableResponse<Response> response = RestAssured
                 .given().body(givenRq).contentType(APPLICATION_JSON_VALUE)
-                .when().post("/habit/coach/phase")
-                .then()
+                .when().get("/habit")
+                .then().log().all()
                 .extract();
 
-        // then
-        assertThat(response.statusCode()).isEqualTo(HttpStatus.CREATED.value());
-
-        JsonPath actual = response.jsonPath();
-        assertThat(actual.getLong("habitAssessmentManagerId")).isNotNull();
-        assertThat(actual.getString("phaseType")).isNotNull();
-        assertThat(actual.getString("phaseDescription")).isNotNull();
+        assertThat(response.statusCode()).isEqualTo(HttpStatus.OK.value());
+        List<Map<String, Object>> userHabitList = response.jsonPath().getList("$");
+        assertThat(userHabitList).isNotEmpty();
+        assertUserHabitList(userHabitList);
     }
 
-    private PhaseEvaluationRq createPhaseEvaluationRq(long phaseId,
-                                                      List<PhaseEvaluationAnswerRq> phaseEvaluationAnswers) {
-        return new PhaseEvaluationRq(phaseId, phaseEvaluationAnswers);
+    private void assertUserHabitList(List<Map<String, Object>> userHabitList) {
+        userHabitList.forEach(this::assertUserHabit);
     }
 
-    private List<PhaseEvaluationAnswerRq> createPhaseEvaluationAnswers() {
-        PhaseEvaluationAnswerRq rq1 = new PhaseEvaluationAnswerRq("1",
-                "저는 매일 밤 잠자리에 들기 전에 책을 읽는 습관을 기르는 데 집중하고 있습니다. 독서는 긴장을 풀고 기술로부터의 연결을 끊는 데 도움이 되어 수면의 질을 향상시키기 때문에 중요하다고 믿습니다.");
-        PhaseEvaluationAnswerRq rq2 = new PhaseEvaluationAnswerRq("2",
-                "네, 매일 밤 잠들기 전 30분 이상 책을 읽는 것을 목표로 삼았습니다. 이를 달성하기 위해 관심 있는 책 목록을 선택하고 독서등과 책을 한 무더기씩 놓아두었습니다. 방해가 되지 않도록 예정된 독서 시간 한 시간 전에 모든 전자 장치를 끄기로 결정했습니다.");
-        PhaseEvaluationAnswerRq rq3 = new PhaseEvaluationAnswerRq("3",
-                "내가 취한 가장 작은 조치는 가능한 한 쉽게 끝까지 읽을 수 있도록 하루에 한 페이지부터 시작하는 것입니다. 이것이 내 일상의 일부가 되면서 점차적으로 읽는 양을 늘리는 것이 내 계획입니다.");
-        PhaseEvaluationAnswerRq rq4 = new PhaseEvaluationAnswerRq("4",
-                "지금까지 일주일에 며칠 밤만 책을 읽었습니다. 매일 밤 읽은 페이지 수를 일지에 기록하여 진행 상황을 추적하고 있습니다.");
-        PhaseEvaluationAnswerRq rq5 = new PhaseEvaluationAnswerRq("5",
-                "아직 시작하는 단계라 습관을 유지하는 것이 어려울 정도는 아닙니다. 스케줄이 바빠지면 시간을 내기가 어려울 것으로 예상하지만, 일정을 잡아서 해결하려고 합니다. 내 달력에서는 독서 시간을 더 엄격하게 정해요.");
-
-        return new ArrayList<>(List.of(rq1, rq2, rq3, rq4, rq5));
+    private void assertUserHabit(Map<String, Object> userHabit) {
+        assertThat(userHabit).containsKeys("habitId", "habitName");
+        assertThat(userHabit.get("habitId")).isNotNull();
+        assertThat(userHabit.get("habitName")).isNotNull();
     }
 
     @Test
-    @DisplayName("사용자의 습관 형성 단계에 따른 사전 질문을 가져온다.")
-    void get_pre_questions_according_to_user_habit_phase() {
+    @DisplayName("사용자의 습관을 삭제한다.")
+    void delete_habit() {
         // given
-        UserHabitPreQuestionRq givenRq = createUserHabitPreQuestionRq();
+        long pathVariable = 7;
 
         // when
         ExtractableResponse<Response> response = RestAssured
-                .given().body(givenRq).contentType(APPLICATION_JSON_VALUE)
-                .when().post("/habit/coach/phase/question")
-                .then()
+                .given().pathParam("habitId", pathVariable).log().all()
+                .when().delete("/habit/{habitId}")
+                .then().log().all()
                 .extract();
 
         // then
         assertThat(response.statusCode()).isEqualTo(HttpStatus.OK.value());
-
-        List<Map<String, Object>> userHabitPreQuestions = response.jsonPath().getList("$");
-        assertThat(userHabitPreQuestions).isNotEmpty();
-        assertUserHabitPreQuestions(userHabitPreQuestions);
     }
 
-    private UserHabitPreQuestionRq createUserHabitPreQuestionRq() {
-        return new UserHabitPreQuestionRq(1, "Consideration stage");
+    @Test
+    @DisplayName("사용자 습관을 진행상황을 표시한다.")
+    void track_user_habit() {
+        // given
+        CreateHabitTrackRq givenRq = new CreateHabitTrackRq(8, LocalDate.of(2024, 3, 10), "checked");
+
+        // when
+        ExtractableResponse<Response> response = RestAssured
+                .given().body(givenRq).contentType(APPLICATION_JSON_VALUE)
+                .when().post("/habit/track")
+                .then().log().all()
+                .extract();
+
+        assertThat(response.statusCode()).isEqualTo(HttpStatus.OK.value());
+        JsonPath actual = response.jsonPath();
+        assertThat(actual.getLong("goalTrackerId")).isNotNull();
+        assertThat(actual.getLong("trackId")).isNotNull();
     }
 
-    private void assertUserHabitPreQuestions(List<Map<String, Object>> userHabitPreQuestions) {
-        userHabitPreQuestions.forEach(this::assertUserHabitPreQuestion);
+    @Test
+    @DisplayName("사용자의 특정 습관의 진행상황을 가져온다.")
+    void get_specific_habit_track_list() {
+        // given
+        SpecificHabitTrackListRq givenRq = new SpecificHabitTrackListRq(12, 2024, 3);
+
+        // when
+        ExtractableResponse<Response> response = RestAssured
+                .given().body(givenRq).contentType(APPLICATION_JSON_VALUE)
+                .when().get("/habit/track")
+                .then().log().all()
+                .extract();
+
+        assertThat(response.statusCode()).isEqualTo(HttpStatus.OK.value());
+        List<Map<String, Object>> actual = response.jsonPath().getList("$");
+        assertThat(actual).isNotEmpty();
+        assertThatSpecificHabitTrackStructure(actual);
     }
 
-    private void assertUserHabitPreQuestion(Map<String, Object> userHabitPreQuestion) {
-        assertUserHabitPreQuestionStructure(userHabitPreQuestion);
-    }
-
-    private void assertUserHabitPreQuestionStructure(Map<String, Object> userHabitPreQuestion) {
-        assertThat(userHabitPreQuestion).containsKeys("feedbackModuleId", "key", "subject", "phaseQuestions");
-        assertThat(userHabitPreQuestion.get("feedbackModuleId")).isNotNull();
-        assertThat(userHabitPreQuestion.get("key")).isNotNull();
-        assertThat(userHabitPreQuestion.get("subject")).isNotNull();
-        assertThat(userHabitPreQuestion.get("phaseQuestions")).isNotNull();
-
-        assertPhaseQuestions(userHabitPreQuestion);
-    }
-
-    private void assertPhaseQuestions(Map<String, Object> userHabitPreQuestion) {
-        List<Map<String, Object>> phaseQuestions = (List<Map<String, Object>>) userHabitPreQuestion.get("phaseQuestions");
-        for (Map<String, Object> phaseQuestion : phaseQuestions) {
-            assertPhaseQuestion(phaseQuestion);
+    private void assertThatSpecificHabitTrackStructure(List<Map<String, Object>> actual) {
+        for (Map<String, Object> specificHabitTrackInfo : actual) {
+            assertThat(specificHabitTrackInfo).containsKeys("trackId", "trackDateTime", "trackType");
+            assertThat(specificHabitTrackInfo.get("trackId")).isNotNull();
+            assertThat(specificHabitTrackInfo.get("trackType")).isNotNull();
+            assertThat(specificHabitTrackInfo.get("trackDateTime")).isNotNull();
         }
     }
 
-    private void assertPhaseQuestion(Map<String, Object> phaseQuestion) {
-        assertThat(phaseQuestion).containsKeys("key", "question");
-        assertThat(phaseQuestion.get("key")).isNotNull();
-        assertThat(phaseQuestion.get("question")).isNotNull();
-    }
-
     @Test
-    @DisplayName("사용자가 답변을 제출하면 피드백이 온다.")
-    void get_feedback_according_to_answer() {
+    @DisplayName("사용자의 특정 습관을 상세조회해 가져온다.")
+    void get_specific_user_habit_info() {
         // given
-        PhaseFeedbackRq givenRq = createPhaseFeedbackRq(1, createPhaseAnswers());
+        long pathVariable = 1;
 
         // when
         ExtractableResponse<Response> response = RestAssured
-                .given().body(givenRq).contentType(APPLICATION_JSON_VALUE)
-                .when().post("/habit/coach/phase/feedback")
-                .then()
+                .given().pathParam("habitId", pathVariable)
+                .when().get("/habit/{habitId}")
+                .then().log().all()
+                .extract();
+
+        // then
+        assertThat(response.statusCode()).isEqualTo(HttpStatus.OK.value());
+        JsonPath actual = response.jsonPath();
+        assertThat(actual.getString("habitName")).isNotNull();
+        assertThatUserHabitFormingPhaseDto(actual);
+        assertThatUserGoalTrackerDto(actual);
+    }
+
+    private void assertThatUserHabitFormingPhaseDto(JsonPath actual) {
+        Map<String, Object> userHabitFormingPhaseDto = (Map<String, Object>) actual.get("userHabitFormingPhaseDto");
+        assertThat(userHabitFormingPhaseDto).containsKeys("habitFormingPhaseId", "habitAssessmentManagerId", "habitFormingPhaseType");
+        assertThat(userHabitFormingPhaseDto.get("habitFormingPhaseId")).isNotNull();
+        assertThat(userHabitFormingPhaseDto.get("habitAssessmentManagerId")).isNotNull();
+        assertThat(userHabitFormingPhaseDto.get("habitFormingPhaseType")).isNotNull();
+    }
+
+    private void assertThatUserGoalTrackerDto(JsonPath actual) {
+        Map<String, Object> userGoalTrackerDto = (Map<String, Object>) actual.get("userGoalTrackerDto");
+        assertThat(userGoalTrackerDto).containsKeys("goalTrackerId", "smartId", "executionIntentionId");
+        assertThat(userGoalTrackerDto.get("goalTrackerId")).isNotNull();
+        assertThat(userGoalTrackerDto.get("smartId")).isNotNull();
+        assertThat(userGoalTrackerDto.get("executionIntentionId")).isNotNull();
+    }
+
+    @Test
+    @DisplayName("사용자의 특정 습관의 습관 형성 단계 피드백을 가져온다.")
+    void get_user_habit_phase_feedback() {
+        // given
+        long pathVariable = 4;
+
+        // when
+        ExtractableResponse<Response> response = RestAssured
+                .given().pathParam("habitFormingPhaseId", pathVariable)
+                .when().get("/habit/feedback/{habitFormingPhaseId}")
+                .then().log().all()
                 .extract();
 
         // then
         assertThat(response.statusCode()).isEqualTo(HttpStatus.OK.value());
 
         JsonPath actual = response.jsonPath();
-        assertThat(actual.getString("feedbackSubject")).isNotNull();
-        assertThat(actual.getString("feedback")).isNotNull();
+        assertThat(actual.getString("habitFormingPhaseType")).isNotNull();
+        assertThat(actual.getString("description")).isNotNull();
+        assertThat(Optional.ofNullable(actual.get("userHabitFeedbackModules"))).isNotNull();
+
+        List<Map<String, Object>> userHabitFeedbackModules = actual.get("userHabitFeedbackModules");
+        assertThatUserHabitFeddbackModules(userHabitFeedbackModules);
     }
 
-    private PhaseFeedbackRq createPhaseFeedbackRq(long feedbackModuleId, List<PhaseAnswerRq> phaseAnswers) {
-        return new PhaseFeedbackRq("Preparation stage", feedbackModuleId, phaseAnswers);
+    private void assertThatUserHabitFeddbackModules(List<Map<String, Object>> userHabitFeedbackModules) {
+        for (Map<String, Object> userHabitFeedbackModule : userHabitFeedbackModules) {
+            assertThat(userHabitFeedbackModule).containsKeys("userHabitFeedbackDto", "feedbackSessionDtos");
+            assertThat(userHabitFeedbackModule.get("userHabitFeedbackDto")).isNotNull();
+            assertThat(userHabitFeedbackModule.get("feedbackSessionDtos")).isNotNull();
+
+            assertThatUserHabitFeedbackDto(userHabitFeedbackModule);
+            assertThatFeedbackSessionDtos(userHabitFeedbackModule);
+        }
     }
 
-    private List<PhaseAnswerRq> createPhaseAnswers() {
-        PhaseAnswerRq rq1 = new PhaseAnswerRq("1", "가장 먼저, 매일 아침 10분간 스트레칭을 시작할 계획입니다.");
-        PhaseAnswerRq rq2 = new PhaseAnswerRq("2", "이를 위해, 매일 아침 알람을 설정하고, 침대 옆에 스트레칭 매트를 놓을 것입니다.");
-        PhaseAnswerRq rq3 = new PhaseAnswerRq("3", "이 작은 습관을 통해 하루를 더 활기차게 시작하고, 유연성을 향상시키고 싶습니다.");
+    private void assertThatUserHabitFeedbackDto(Map<String, Object> userHabitFeedbackModule) {
+        Map<String, Object> userHabitFeedbackDto = (Map<String, Object>) userHabitFeedbackModule.get(
+                "userHabitFeedbackDto");
+        assertThat(userHabitFeedbackDto.get("feedbackModuleId")).isNotNull();
+        assertThat(userHabitFeedbackDto.get("subject")).isNotNull();
+        assertThat(userHabitFeedbackDto.get("feedback")).isNotNull();
+    }
 
-        return new ArrayList<>(List.of(rq1, rq2, rq3));
+    private void assertThatFeedbackSessionDtos(Map<String, Object> userHabitFeedbackModule) {
+        List<Map<String, Object>> feedbackSessionDtos = (List<Map<String, Object>>) userHabitFeedbackModule.get(
+                "feedbackSessionDtos");
+        for (Map<String, Object> feedbackSessionDto : feedbackSessionDtos) {
+            assertThat(feedbackSessionDto).containsKeys("question", "answer");
+            assertThat(feedbackSessionDto.get("question")).isNotNull();
+            assertThat(feedbackSessionDto.get("answer")).isNotNull();
+        }
     }
 }

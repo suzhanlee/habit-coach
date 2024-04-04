@@ -1,6 +1,7 @@
 package app.habit.domain.factory;
 
-import app.habit.domain.FeedbackModule;
+import app.habit.dto.openaidto.FeedbackPromptDto;
+import app.habit.dto.openaidto.FeedbackPromptDto.FeedbackDto;
 import app.habit.service.gpt.request.PromptMessage;
 import app.habit.service.gpt.request.PromptRole;
 import app.habit.service.gpt.request.RequestPrompt;
@@ -27,7 +28,7 @@ public class FeedbackPromptFactory {
             Also, I need you to give me feedback by specializing in certain topics during this phase.
 
             The steps and topics to which the user belongs, and questions and answers are as follows.
-            
+
             """;
     private static final String SUFFIX = """
             The question above is a question provided by you, a habit expert, to the user, and answer is based on the question by the user
@@ -47,11 +48,26 @@ public class FeedbackPromptFactory {
 
             The important thing here is that you don't have to say anything else, you only have to give me the json-type response that I want""";
 
-    public RequestPrompt create(FeedbackModule feedbackModule, String habitFormingPhaseType) {
+    public RequestPrompt create(FeedbackPromptDto feedbackPromptDto, String habitFormingPhaseType) {
         String promptBuilder = PREFIX
                 + "habitFormingPhase : " + habitFormingPhaseType + '\n'
-                + feedbackModule.createPrompt()
+                + createPrompt(feedbackPromptDto)
                 + SUFFIX;
         return new RequestPrompt(model, List.of(new PromptMessage(PromptRole.USER, promptBuilder)));
+    }
+
+    public String createPrompt(FeedbackPromptDto feedbackPromptDto) {
+        StringBuilder promptBuilder = new StringBuilder();
+        promptBuilder.append("subject : ").append(feedbackPromptDto.getSubject()).append('\n');
+
+        for (FeedbackDto feedbackDto : feedbackPromptDto.getFeedbackDtos()) {
+            promptBuilder.append(
+                    "number : " + feedbackDto.getSessionKey() + '\n'
+                            + "question : " + feedbackDto.getQuestion() + '\n'
+                            + "answer : " + feedbackDto.getAnswer() + '\n'
+            );
+        }
+
+        return promptBuilder.toString();
     }
 }
