@@ -64,4 +64,26 @@ public class SmartGoalService {
     public void deleteSmartGoal(long smartGoalId) {
         smartRepository.deleteById(smartGoalId);
     }
+
+    public UpdateSmartGoalRs updateSmartGoal(UpdateSmartGoalRq rq) {
+        Long goalTrackerId = smartRepository.findById(rq.getSmartId())
+                .orElseThrow()
+                .getGoalTrackerId();
+
+        Long habitId = goalTrackerRepository.findById(goalTrackerId)
+                .orElseThrow()
+                .getHabitId();
+
+        String habitName = habitRepository.findById(habitId)
+                .orElseThrow()
+                .getName();
+
+        HabitFormingPhaseType phaseType = habitAssessmentManagerRepository.findPhaseTypeByHabitFormingPhaseId(
+                        habitFormingPhaseRepository.findIdByHabitId(habitId).orElseThrow())
+                .orElseThrow();
+
+        RequestPrompt requestPrompt = feedbackPromptFactory.create(habitName, phaseType, rq.getGoal());
+        String feedback = feedbackGptCoach.requestSmartGoalFeedback(requestPrompt, url);
+        return new UpdateSmartGoalRs(feedback);
+    }
 }
