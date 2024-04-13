@@ -5,12 +5,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-import app.habit.dto.GptRsWrapper;
-import app.habit.dto.GptRsWrapper.Choice;
-import app.habit.dto.GptRsWrapper.Choice.Message;
-import app.habit.dto.HabitPreQuestionRs;
-import app.habit.service.gpt.coach.PreQuestionGptCoach;
+import app.habit.dto.openaidto.GptRsWrapper;
+import app.habit.dto.openaidto.GptRsWrapper.Choice;
+import app.habit.dto.openaidto.GptRsWrapper.Choice.Message;
+import app.habit.dto.openaidto.HabitPreQuestionRs;
 import app.habit.service.gpt.request.RequestPrompt;
+import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -58,11 +58,12 @@ class PreQuestionGptCoachTest {
     }
 
     private List<HabitPreQuestionRs> createContent() {
-        return List.of(new HabitPreQuestionRs());
+        return Collections.singletonList(new HabitPreQuestionRs());
     }
 
     private GptRsWrapper createMockRs(List<HabitPreQuestionRs> actualMockContent) {
-        return new GptRsWrapper(List.of(
-                new Choice(new Message(actualMockContent.toString()))));
+        Message message = new Message(actualMockContent.toString());
+        Choice choice = new Choice(1, message, "logprobs", "finish_reason");
+        return new GptRsWrapper("id", "object", 123456789L, "model", Collections.singletonList(choice), null, "system_fingerprint");
     }
 }
