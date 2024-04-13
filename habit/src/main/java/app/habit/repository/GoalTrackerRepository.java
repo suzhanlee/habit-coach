@@ -12,6 +12,6 @@ public interface GoalTrackerRepository extends JpaRepository<GoalTracker, Long> 
     @Query("SELECT g.id FROM GoalTracker g WHERE g.habitId = :habitId")
     Optional<Long> findByHabitId(@Param("habitId") Long habitId);
 
-    @Query("select new app.habit.dto.habitdto.UserGoalTrackerDto(g.id, s.id, e.id) FROM GoalTracker g JOIN Smart s ON s.goalTrackerId = :goalTrackerId JOIN ExecutionIntention e ON e.goalTrackerId = :goalTrackerId")
+    @Query("SELECT new app.habit.dto.habitdto.UserGoalTrackerDto(g.id, s.id, e.id) FROM GoalTracker g JOIN Smart s ON s.goalTrackerId = :goalTrackerId JOIN ExecutionIntention e ON e.goalTrackerId = :goalTrackerId")
     UserGoalTrackerDto findDtoById(@Param("goalTrackerId") Long goalTrackerId);
 }
