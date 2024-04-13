@@ -24,4 +24,9 @@ public class ExecutionIntentionController {
     public void getExecutionIntention(@PathVariable("executionIntentionId") Long executionIntentionId) {
         executionIntentionService.getExecutionIntention(executionIntentionId);
     }
+
+    @DeleteMapping("/habit/execution-intention/{executionIntentionId}")
+    public void deleteExecutionIntention(@PathVariable("executionIntentionId") Long executionIntentionId) {
+        executionIntentionService.deleteExecutionIntention(executionIntentionId);
+    }
 }
