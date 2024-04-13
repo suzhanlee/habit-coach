@@ -30,4 +30,9 @@ public class SmartGoalController {
     public UserSmartGoalRs getSmartGoal(@PathVariable("smartId") Long smartGoalId) {
         return smartGoalService.getSmartGoal(smartGoalId);
     }
+
+    @DeleteMapping("/habit/smart/{smartId}")
+    public void deleteSmartGoal(@PathVariable("smartId") Long smartGoalId) {
+        smartGoalService.deleteSmartGoal(smartGoalId);
+    }
 }

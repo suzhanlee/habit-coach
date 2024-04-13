@@ -60,4 +60,8 @@ public class SmartGoalService {
     public UserSmartGoalRs getSmartGoal(long smartGoalId) {
         return smartRepository.findUserSmartGoalRsById(smartGoalId);
     }
+
+    public void deleteSmartGoal(long smartGoalId) {
+        smartRepository.deleteById(smartGoalId);
+    }
 }
