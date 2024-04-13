@@ -25,4 +25,9 @@ public class SmartGoalController {
     public CreateSmartGoalRs createSmartGoal(@RequestBody CreateSmartGoalRq rq) {
         return smartGoalService.createSmartGoal(rq);
     }
+
+    @GetMapping("/habit/smart/{smartId}")
+    public UserSmartGoalRs getSmartGoal(@PathVariable("smartId") Long smartGoalId) {
+        return smartGoalService.getSmartGoal(smartGoalId);
+    }
 }

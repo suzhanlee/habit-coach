@@ -56,4 +56,8 @@ public class SmartGoalService {
 
         return new CreateSmartGoalRs(smart.getId(), smartGoalFeedback);
     }
+
+    public UserSmartGoalRs getSmartGoal(long smartGoalId) {
+        return smartRepository.findUserSmartGoalRsById(smartGoalId);
+    }
 }
