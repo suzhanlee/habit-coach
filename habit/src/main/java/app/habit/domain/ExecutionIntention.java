@@ -18,4 +18,13 @@ public class ExecutionIntention {
 
     @Column(name = "goal_tracker_id")
     private Long goalTrackerId;
+
+    private String content;
+    private String feedback;
+
+    public ExecutionIntention(Long goalTrackerId, String content, String feedback) {
+        this.goalTrackerId = goalTrackerId;
+        this.content = content;
+        this.feedback = feedback;
+    }
 }
