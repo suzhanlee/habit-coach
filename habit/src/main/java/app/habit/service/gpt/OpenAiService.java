@@ -33,11 +33,15 @@ import app.habit.service.gpt.coach.PhaseGptCoach;
 import app.habit.service.gpt.coach.PreQuestionGptCoach;
 import app.habit.service.gpt.request.RequestPrompt;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -211,18 +215,18 @@ public class OpenAiService {
 
         FeedbackPromptDto feedbackPromptDto = new FeedbackPromptDto(feedbackModule.getSubject());
 
+        Map<String, FeedbackSession> feedbackSessionMap = feedbackSessions.stream().collect(
+                Collectors.toMap(FeedbackSession::getSessionKey, feedbackSession -> feedbackSession, (a, b) -> b));
+
         for (PhaseAnswerRq phaseAnswer : rq.getPhaseAnswers()) {
-            for (FeedbackSession feedbackSession : feedbackSessions) {
-                String sessionKey = feedbackSession.getSessionKey();
-                if (phaseAnswer.getKey().equals(sessionKey)) {
-                    feedbackSession.addAnswer(phaseAnswer.getUserAnswer());
-                    feedbackPromptDto.addFeedbackDto(
-                            feedbackSession.getSessionKey(),
-                            feedbackSession.getQuestion(),
-                            feedbackSession.getAnswer()
-                    );
-                }
-            }
+            Optional.ofNullable(feedbackSessionMap.get(phaseAnswer.getKey())).ifPresent(feedbackSession -> {
+                feedbackSession.addAnswer(phaseAnswer.getUserAnswer());
+                feedbackPromptDto.addFeedbackDto(
+                        feedbackSession.getSessionKey(),
+                        feedbackSession.getQuestion(),
+                        feedbackSession.getAnswer()
+                );
+            });
         }
 
         // request -> gpt
