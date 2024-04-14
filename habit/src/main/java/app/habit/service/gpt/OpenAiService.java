@@ -32,8 +32,12 @@ import app.habit.service.gpt.coach.FeedbackGptCoach;
 import app.habit.service.gpt.coach.PhaseGptCoach;
 import app.habit.service.gpt.coach.PreQuestionGptCoach;
 import app.habit.service.gpt.request.RequestPrompt;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -72,7 +76,8 @@ public class OpenAiService {
     public List<HabitPreQuestionRs> getHabitPreQuestions(Long habitId, String type, String prompt) {
         // request -> gpt
         RequestPrompt requestPrompt = promptFactory.create(type, prompt);
-        List<HabitPreQuestionRs> preQuestionRs = preQuestionGptCoach.requestPreQuestions(requestPrompt, url);
+        Callable<List<HabitPreQuestionRs>> callable = () -> preQuestionGptCoach.requestPreQuestions(requestPrompt,
+                url);
 
         // find
         Habit findHabit = habitRepository.findById(habitId).orElseThrow();
@@ -81,16 +86,40 @@ public class OpenAiService {
         Long habitFormingPhaseId = habitFormingPhaseService.findHabitFormingPhaseIdOrCreate(findHabit.getId());
         Long habitAssessmentManagerId = habitAssessmentManagerService.save(habitFormingPhaseId);
 
-        for (HabitPreQuestionRs preQuestionR : preQuestionRs) {
-            String key = preQuestionR.getKey();
-            String subject = preQuestionR.getSubject();
-            QuestionRs questionRs = preQuestionR.getQuestionRs();
+        List<HabitPreQuestionRs> habitPreQuestionRsList = getCallList(callable);
+        ExecutorService executorService = Executors.newFixedThreadPool(habitPreQuestionRsList.size());
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
 
-            Long subjectId = subjectService.save(key, subject, habitAssessmentManagerId);
-            questionService.save(questionRs.getQuestionKey(), questionRs.getQuestion(), subjectId);
+        for (HabitPreQuestionRs habitPreQuestionRs : habitPreQuestionRsList) {
+            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                String key = habitPreQuestionRs.getKey();
+                String subject = habitPreQuestionRs.getSubject();
+                QuestionRs questionRs = habitPreQuestionRs.getQuestionRs();
+
+                Long subjectId = subjectService.save(key, subject, habitAssessmentManagerId);
+                questionService.save(questionRs.getQuestionKey(), questionRs.getQuestion(), subjectId);
+            }, executorService);
+            futures.add(future);
         }
 
-        return preQuestionRs;
+        closeFutures(futures, executorService);
+
+        return habitPreQuestionRsList;
+    }
+
+    private <T> T getCall(Callable<T> callable) {
+        T call;
+        try {
+            call = callable.call();
+        } catch (Exception e) {
+            throw new RuntimeException("gpt 코치에게 요청이 돌아오지 않았습니다.");
+        }
+        return call;
+    }
+
+    private void closeFutures(List<CompletableFuture<Void>> futures, ExecutorService executorService) {
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        executorService.shutdown();
     }
 
     public PhaseEvaluationRs evaluateHabitPhase(PhaseEvaluationRq rq) {
@@ -101,49 +130,75 @@ public class OpenAiService {
                 .orElseThrow();
 
         // save answers according to subject
+        ExecutorService executorService = Executors.newFixedThreadPool(rq.getAnswers().size());
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
         for (PhaseEvaluationAnswerRq phaseEvaluationAnswerRq : rq.getAnswers()) {
-            answerService.save(phaseEvaluationAnswerRq.getKey(), phaseEvaluationAnswerRq.getUserAnswer(),
-                    habitAssessmentManagerId);
+            CompletableFuture<Void> future = CompletableFuture.runAsync(() ->
+                            answerService.save(phaseEvaluationAnswerRq.getKey(),
+                                    phaseEvaluationAnswerRq.getUserAnswer(),
+                                    habitAssessmentManagerId),
+                    executorService);
+            futures.add(future);
         }
 
-        // request -> gpt
-        List<SingleEvaluationPromptDto> totalEvaluationPromptDto = subjectService.getTotalEvaluationPromptDto(
-                habitAssessmentManager.getId());
+        closeFutures(futures, executorService);
 
+        // request -> gpt
+        List<SingleEvaluationPromptDto> totalEvaluationPromptDto = subjectService.getTotalEvaluationPromptDto(habitAssessmentManager.getId());
         RequestPrompt requestPrompt = evaluationPromptFactory.create(totalEvaluationPromptDto);
-        PhaseEvaluationRs evaluationRs = evaluationGptCoach.requestEvaluation(requestPrompt, url);
+        Callable<PhaseEvaluationRs> callable = () -> evaluationGptCoach.requestEvaluation(requestPrompt, url);
 
         // save evaluation result
-        String phaseType = evaluationRs.getPhaseType();
-        String phaseDescription = evaluationRs.getPhaseDescription();
+        PhaseEvaluationRs phaseEvaluationRs = getCall(callable);
+        String phaseType = phaseEvaluationRs.getPhaseType();
+        String phaseDescription = phaseEvaluationRs.getPhaseDescription();
 
         habitAssessmentManagerService.savePhaseInfo(phaseType, phaseDescription, habitAssessmentManager.getId());
 
-        return evaluationRs;
+        return phaseEvaluationRs;
     }
 
     public List<UserHabitPreQuestionRs> getSpecificPhasePreQuestions(UserHabitPreQuestionRq rq) {
         // request -> gpt
         RequestPrompt requestPrompt = specificPhasePreQuestionPromptFactory.create(rq.getHabitFormingPhaseType());
-        List<UserHabitPreQuestionRs> userHabitPreQuestionRsList = phaseGptCoach.requestUserHabitPreQuestions(
+        Callable<List<UserHabitPreQuestionRs>> callable = () -> phaseGptCoach.requestUserHabitPreQuestions(
                 requestPrompt, url);
 
         // find
         HabitFormingPhase userHabitFormingPhase = habitFormingPhaseRepository.findById(rq.getHabitFormingPhaseId())
                 .orElseThrow();
 
+        List<UserHabitPreQuestionRs> userHabitPreQuestionRsList = getCallList(callable);
+
         // save 로직
         for (UserHabitPreQuestionRs userHabitPreQuestionRs : userHabitPreQuestionRsList) {
-            Long feedbackModuleId = feedbackModuleService.save(userHabitPreQuestionRs.getKey(),
+            Callable<Long> callableFeedbackModuleId = () -> feedbackModuleService.save(userHabitPreQuestionRs.getKey(),
                     userHabitPreQuestionRs.getSubject(), userHabitFormingPhase.getId());
 
+            // save feedbackSessions
+            ExecutorService executorService = Executors.newFixedThreadPool(userHabitPreQuestionRsList.size());
+            List<CompletableFuture<Void>> futures = new ArrayList<>();
             for (PhaseQuestionRs question : userHabitPreQuestionRs.getQuestions()) {
-                feedbackSessionService.save(question.getQuestionKey(), question.getQuestion(), feedbackModuleId);
+                CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                    feedbackSessionService.save(question.getQuestionKey(), question.getQuestion(), getCall(callableFeedbackModuleId));
+                }, executorService);
+                futures.add(future);
             }
+            closeFutures(futures, executorService);
         }
 
         // return response to user
         return userHabitPreQuestionRsList;
+    }
+
+    private <T> List<T> getCallList(Callable<List<T>> callable) {
+        List<T> call;
+        try {
+            call = callable.call();
+        } catch (Exception e) {
+            throw new RuntimeException("gpt 코치에게 요청이 돌아오지 않았습니다.");
+        }
+        return call;
     }
 
     public PhaseFeedbackRs getFeedbackAboutSpecificSubject(PhaseFeedbackRq rq) {
@@ -172,9 +227,10 @@ public class OpenAiService {
 
         // request -> gpt
         RequestPrompt requestPrompt = feedbackPromptFactory.create(feedbackPromptDto, rq.getHabitFormingPhaseType());
-        PhaseFeedbackRs phaseFeedbackRs = feedbackGptCoach.requestPhaseFeedback(requestPrompt, url);
+        Callable<PhaseFeedbackRs> callable = () -> feedbackGptCoach.requestPhaseFeedback(requestPrompt, url);
 
         // save subject & feedback to feedbackModule
+        PhaseFeedbackRs phaseFeedbackRs = getCall(callable);
         feedbackModule.addSubject(phaseFeedbackRs.getFeedbackSubject());
         feedbackModule.addFeedback(phaseFeedbackRs.getFeedback());
 
