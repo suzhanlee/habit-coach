@@ -176,15 +176,15 @@ public class OpenAiService {
 
         // save 로직
         for (UserHabitPreQuestionRs userHabitPreQuestionRs : userHabitPreQuestionRsList) {
-            Callable<Long> callableFeedbackModuleId = () -> feedbackModuleService.save(userHabitPreQuestionRs.getKey(),
+            Long feedbackModuleId = feedbackModuleService.save(userHabitPreQuestionRs.getKey(),
                     userHabitPreQuestionRs.getSubject(), userHabitFormingPhase.getId());
 
             // save feedbackSessions
-            ExecutorService executorService = Executors.newFixedThreadPool(userHabitPreQuestionRsList.size());
+            ExecutorService executorService = Executors.newFixedThreadPool(userHabitPreQuestionRs.getQuestions().size());
             List<CompletableFuture<Void>> futures = new ArrayList<>();
             for (PhaseQuestionRs question : userHabitPreQuestionRs.getQuestions()) {
                 CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
-                    feedbackSessionService.save(question.getQuestionKey(), question.getQuestion(), getCall(callableFeedbackModuleId));
+                    feedbackSessionService.save(question.getQuestionKey(), question.getQuestion(), feedbackModuleId);
                 }, executorService);
                 futures.add(future);
             }
