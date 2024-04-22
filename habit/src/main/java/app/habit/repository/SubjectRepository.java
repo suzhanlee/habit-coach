@@ -20,7 +20,7 @@ public interface SubjectRepository extends JpaRepository<Subject, Long> {
             "q.question, " +
             "a.answer )" +
             "FROM Subject s " +
-            "LEFT JOIN Question q ON s.id = q.subjectId LEFT JOIN Answer a ON s.id = a.subjectId WHERE s.id = :subjectKey")
+            "LEFT JOIN Question q ON s.id = q.subjectId LEFT JOIN Answer a ON s.id = a.subjectId WHERE s.subjectKey = :subjectKey")
     SingleEvaluationPromptDto findPromptDtoBySubjectKey(@Param("subjectKey") String subjectKey);
 
     @Query("SELECT s.subjectKey from Subject s WHERE s.habitAssessmentManagerId = :habitAssessmentManagerId")

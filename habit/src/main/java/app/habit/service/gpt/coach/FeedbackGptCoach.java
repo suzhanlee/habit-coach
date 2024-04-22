@@ -8,14 +8,14 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 @Component
 @RequiredArgsConstructor
@@ -24,16 +24,20 @@ public class FeedbackGptCoach {
     @Value("${app.api-key}")
     private String apiKey;
 
-    private final RestTemplate restTemplate;
-
-    public PhaseFeedbackRs requestPhaseFeedback(RequestPrompt requestBody, String url) {
-        HttpEntity<RequestPrompt> request = createAdviceRequest(requestBody);
-        GptRsWrapper advice = requestTotalAdvice(url, request);
-        return getCoreAdvice(advice);
+    public CompletableFuture<PhaseFeedbackRs> requestPhaseFeedback(RequestPrompt requestBody, String url) {
+        CompletableFuture<GptRsWrapper> adviceFuture = writeAdvice(requestBody, url);
+        return getCoreAdvice(adviceFuture);
     }
 
-    private HttpEntity<RequestPrompt> createAdviceRequest(RequestPrompt requestBody) {
-        return new HttpEntity<>(requestBody, createHeaders());
+    private CompletableFuture<GptRsWrapper> writeAdvice(RequestPrompt requestBody, String url) {
+        return WebClient.create()
+                .post()
+                .uri(url)
+                .body(Mono.justOrEmpty(requestBody), RequestPrompt.class)
+                .headers(httpHeaders -> httpHeaders.addAll(createHeaders()))
+                .retrieve()
+                .bodyToMono(GptRsWrapper.class)
+                .toFuture();
     }
 
     private HttpHeaders createHeaders() {
@@ -44,20 +48,18 @@ public class FeedbackGptCoach {
         return headers;
     }
 
-    private GptRsWrapper requestTotalAdvice(String url, HttpEntity<RequestPrompt> request) {
-        return restTemplate.exchange(url, HttpMethod.POST, request, GptRsWrapper.class).getBody();
-    }
-
-    private PhaseFeedbackRs getCoreAdvice(GptRsWrapper body) {
-        Message message = body.getChoices().get(0).getMessage();
-        String content = message.getContent();
-        TypeReference<PhaseFeedbackRs> typeReference = new TypeReference<>() {
-        };
-        ObjectMapper objectMapper = new ObjectMapper();
-        try {
-            return objectMapper.readValue(content, typeReference);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    private CompletableFuture<PhaseFeedbackRs> getCoreAdvice(CompletableFuture<GptRsWrapper> futureBody) {
+        return futureBody.thenApplyAsync(gptRsWrapper -> {
+            Message message = gptRsWrapper.getChoices().get(0).getMessage();
+            String content = message.getContent();
+            TypeReference<PhaseFeedbackRs> typeReference = new TypeReference<>() {
+            };
+            ObjectMapper objectMapper = new ObjectMapper();
+            try {
+                return objectMapper.readValue(content, typeReference);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 }
