@@ -90,14 +90,12 @@ public class OpenAiService {
         Long habitAssessmentManagerId = habitAssessmentManagerService.save(habitFormingPhaseId);
 
         return CompletableFuture.supplyAsync(
-                        () -> {
-                            log.info("OpenAiService.getHabitPreQuestions 2 : " + Thread.currentThread().getName());
-                            return preQuestionGptCoach.requestPreQuestions(requestPrompt, url);
-                        }, executorService)
+                        () -> preQuestionGptCoach.requestPreQuestions(requestPrompt, url), executorService)
                 .thenComposeAsync(Function.identity(), executorService)
-                .thenApplyAsync(habitPreQuestionRsList -> CompletableFuture.allOf(
+                .thenComposeAsync(habitPreQuestionRsList -> CompletableFuture.allOf(
                                 habitPreQuestionRsList.stream()
                                         .map(habitPreQuestionRs -> CompletableFuture.supplyAsync(() -> {
+                                            log.info("OpenAiService.getHabitPreQuestions 2 : " + Thread.currentThread().getName());
                                             String key = habitPreQuestionRs.getKey();
                                             String subject = habitPreQuestionRs.getSubject();
                                             QuestionRs questionRs = habitPreQuestionRs.getQuestionRs();
@@ -112,8 +110,7 @@ public class OpenAiService {
                                                     .thenApply(ignored -> habitPreQuestionRs);
                                         }, executorService))
                                         .toArray(CompletableFuture[]::new))
-                        .thenApplyAsync(ignored -> habitPreQuestionRsList, executorService), executorService)
-                .thenComposeAsync(Function.identity(), executorService);
+                        .thenApplyAsync(ignored -> habitPreQuestionRsList, executorService), executorService);
     }
 
     public CompletableFuture<PhaseEvaluationRs> evaluateHabitPhase(PhaseEvaluationRq rq) {
@@ -136,12 +133,14 @@ public class OpenAiService {
                                 .toArray(CompletableFuture[]::new)
                         // request -> gpt
                 ).supplyAsync(() -> {
+                    log.info("OpenAiService.evaluateHabitPhase 3 : " + Thread.currentThread().getName());
                     List<SingleEvaluationPromptDto> totalEvaluationPromptDto = subjectService.getTotalEvaluationPromptDto(
                             habitAssessmentManager.getId());
                     return evaluationPromptFactory.create(totalEvaluationPromptDto);
                 }, executorService)
                 // return
                 .thenComposeAsync(requestPrompt -> {
+                    log.info("OpenAiService.evaluateHabitPhase 4 : " + Thread.currentThread().getName());
                     CompletableFuture<PhaseEvaluationRs> phaseEvaluationRsFuture = evaluationGptCoach.requestEvaluation(
                             requestPrompt, url);
 
@@ -155,7 +154,6 @@ public class OpenAiService {
 
                     return phaseEvaluationRsFuture;
                 }, executorService);
-//                .thenComposeAsync(Function.identity(), executorService);
     }
 
     public CompletableFuture<List<UserHabitPreQuestionRs>> getSpecificPhasePreQuestions(UserHabitPreQuestionRq rq) {
@@ -163,18 +161,15 @@ public class OpenAiService {
         log.info("OpenAiService.getSpecificPhasePreQuestions 1 : " + Thread.currentThread().getName());
         RequestPrompt requestPrompt = specificPhasePreQuestionPromptFactory.create(rq.getHabitFormingPhaseType());
 
-        // find => 이걸 한 칸 앞으로 로직을 이동시켰는지 좀 더 확인해보자. 괜찮을지 아닐지
         HabitFormingPhase userHabitFormingPhase = habitFormingPhaseRepository.findById(rq.getHabitFormingPhaseId())
                 .orElseThrow();
 
         // save 로직
         return CompletableFuture.supplyAsync(
-                        () -> {
-                            log.info("OpenAiService.getSpecificPhasePreQuestions 2 : " + Thread.currentThread().getName());
-                            return phaseGptCoach.requestUserHabitPreQuestions(requestPrompt, url);
-                        }, executorService)
+                        () -> phaseGptCoach.requestUserHabitPreQuestions(requestPrompt, url), executorService)
                 .thenComposeAsync(Function.identity(), executorService)
                 .thenApplyAsync(userHabitPreQuestionRsList -> {
+                    log.info("OpenAiService.getSpecificPhasePreQuestions 2 : " + Thread.currentThread().getName());
                     for (UserHabitPreQuestionRs userHabitPreQuestionRs : userHabitPreQuestionRsList) {
                         Long feedbackModuleId = feedbackModuleService.save(userHabitPreQuestionRs.getKey(),
                                 userHabitPreQuestionRs.getSubject(), userHabitFormingPhase.getId());
@@ -221,10 +216,10 @@ public class OpenAiService {
                 rq.getHabitFormingPhaseType());
 
         return CompletableFuture.supplyAsync(() -> {
-                    log.info("OpenAiService.getFeedbackAboutSpecificSubject 2 : " + Thread.currentThread().getName());
                     // request phase feedback asynchronously
                     return feedbackGptCoach.requestPhaseFeedback(requestPrompt, url)
                             .thenApplyAsync(phaseFeedbackRs -> {
+                                log.info("OpenAiService.getFeedbackAboutSpecificSubject 3 : " + Thread.currentThread().getName());
                                 // add subject & feedback to feedbackModule
                                 feedbackModule.addSubject(phaseFeedbackRs.getFeedbackSubject());
                                 feedbackModule.addFeedback(phaseFeedbackRs.getFeedback());
