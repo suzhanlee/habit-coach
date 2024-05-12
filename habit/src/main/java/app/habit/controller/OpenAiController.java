@@ -7,7 +7,7 @@ import app.habit.dto.openaidto.PhaseFeedbackRq;
 import app.habit.dto.openaidto.PhaseFeedbackRs;
 import app.habit.dto.openaidto.UserHabitPreQuestionRq;
 import app.habit.dto.openaidto.UserHabitPreQuestionRs;
-import app.habit.service.gpt.OpenAiService;
+import app.habit.service.OpenAiService;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;

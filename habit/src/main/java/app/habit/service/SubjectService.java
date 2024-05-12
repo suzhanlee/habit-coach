@@ -1,4 +1,4 @@
-package app.habit.service.gpt;
+package app.habit.service;
 
 import app.habit.domain.Subject;
 import app.habit.dto.openaidto.SingleEvaluationPromptDto;

@@ -1,4 +1,4 @@
-package app.habit.service.gpt;
+package app.habit.service;
 
 import app.habit.domain.FeedbackModule;
 import app.habit.domain.FeedbackSession;

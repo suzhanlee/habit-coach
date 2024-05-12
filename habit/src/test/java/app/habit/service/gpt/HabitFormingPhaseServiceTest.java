@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import app.habit.domain.HabitFormingPhase;
 import app.habit.repository.HabitFormingPhaseRepository;
+import app.habit.service.HabitFormingPhaseService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;

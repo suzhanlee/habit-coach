@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import app.habit.domain.HabitAssessmentManager;
 import app.habit.repository.HabitAssessmentManagerRepository;
+import app.habit.service.HabitAssessmentManagerService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
