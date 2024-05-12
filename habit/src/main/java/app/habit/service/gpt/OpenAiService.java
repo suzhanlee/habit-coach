@@ -7,7 +7,7 @@ import app.habit.domain.HabitAssessmentManager;
 import app.habit.domain.HabitFormingPhase;
 import app.habit.domain.factory.EvaluationPromptFactory;
 import app.habit.domain.factory.FeedbackPromptFactory;
-import app.habit.domain.factory.PromptFactory;
+import app.habit.domain.factory.PreQuestionPromptFactory;
 import app.habit.domain.factory.SpecificPhasePreQuestionPromptFactory;
 import app.habit.dto.openaidto.FeedbackPromptDto;
 import app.habit.dto.openaidto.HabitPreQuestionRs;
@@ -53,7 +53,7 @@ public class OpenAiService {
 
     private final HabitRepository habitRepository;
     private final PreQuestionGptCoach preQuestionGptCoach;
-    private final PromptFactory promptFactory;
+    private final PreQuestionPromptFactory preQuestionPromptFactory;
     private final HabitFormingPhaseService habitFormingPhaseService;
     private final HabitAssessmentManagerService habitAssessmentManagerService;
     private final SubjectService subjectService;
@@ -77,10 +77,10 @@ public class OpenAiService {
 
     private final ExecutorService executorService;
 
-    public CompletableFuture<List<HabitPreQuestionRs>> getHabitPreQuestions(Long habitId, String type, String prompt) {
+    public CompletableFuture<List<HabitPreQuestionRs>> getHabitPreQuestions(long habitId) {
         // request -> gpt
         log.info("OpenAiService.getHabitPreQuestions 1 : " + Thread.currentThread().getName());
-        RequestPrompt requestPrompt = promptFactory.create(type, prompt);
+        RequestPrompt requestPrompt = preQuestionPromptFactory.create();
 
         // find
         Habit findHabit = habitRepository.findById(habitId).orElseThrow();

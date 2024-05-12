@@ -29,7 +29,7 @@ public class OpenAiController {
     public CompletableFuture<List<HabitPreQuestionRs>> getPreQuestionsForEvaluation(
             @PathVariable("phaseId") Long phaseId) {
         log.info("OpenAiController.getPreQuestionsForEvaluation 1 : " + Thread.currentThread().getName());
-        CompletableFuture<List<HabitPreQuestionRs>> rs = openAiService.getHabitPreQuestions(phaseId, "사전 질문", "");
+        CompletableFuture<List<HabitPreQuestionRs>> rs = openAiService.getHabitPreQuestions(phaseId);
         log.info("OpenAiController.getPreQuestionsForEvaluation 2 : " + Thread.currentThread().getName());
         return rs;
     }
