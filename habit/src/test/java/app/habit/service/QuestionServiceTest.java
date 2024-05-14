@@ -20,10 +20,10 @@ import org.springframework.test.util.ReflectionTestUtils;
 class QuestionServiceTest {
 
     @Mock
-    QuestionRepository questionRepository;
+    private QuestionRepository questionRepository;
 
     @InjectMocks
-    QuestionService questionService;
+    private QuestionService questionService;
 
     @Test
     @DisplayName("특정 주제에 해당하는 사전 질문을 저장한다.")
