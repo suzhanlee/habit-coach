@@ -10,20 +10,15 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @NoArgsConstructor
+@Getter
 public class FeedbackSession {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "feedback_session_id")
     private Long id;
-
-    @Getter
     private String sessionKey;
-    @Getter
     private String question;
-
-    // 4 번째 api 부터 필요한 필드
-    @Getter
     private String answer;
 
     @Column(name = "feedback_module_id")
