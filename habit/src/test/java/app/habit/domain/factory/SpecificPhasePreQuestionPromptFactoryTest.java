@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 class SpecificPhasePreQuestionPromptFactoryTest {
 
     @Test
-    @DisplayName("gpt에게 보낼 프롬프트 dto를 생성한다.")
+    @DisplayName("gpt에게 보낼 사용자의 습관 평가 단계를 향상 시키기 위한 사전 질문 프롬프트 dto를 생성한다.")
     void create_request_prompt() {
         // given
         SpecificPhasePreQuestionPromptFactory factory = new SpecificPhasePreQuestionPromptFactory();
