@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-@AllArgsConstructor
 public class FeedbackPromptDto {
 
     private String subject;
@@ -19,17 +18,18 @@ public class FeedbackPromptDto {
         this.feedbackDtos = new ArrayList<>();
     }
 
+    public FeedbackPromptDto(String subject, List<FeedbackDto> feedbackDtos) {
+        this.subject = subject;
+        this.feedbackDtos = feedbackDtos;
+    }
+
     @Getter
     @NoArgsConstructor
     @AllArgsConstructor
-    public class FeedbackDto {
+    public static class FeedbackDto {
         private String sessionKey;
         private String question;
         private String answer;
-    }
-
-    public void addSubject(String subject) {
-        this.subject = subject;
     }
 
     public void addFeedbackDto(String sessionKey, String question, String answer) {
