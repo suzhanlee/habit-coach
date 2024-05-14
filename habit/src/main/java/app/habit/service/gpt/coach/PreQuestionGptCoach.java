@@ -26,10 +26,10 @@ import reactor.core.publisher.Mono;
 @Slf4j
 public class PreQuestionGptCoach {
 
+    private final WebClient webClient;
+
     @Value("${app.api-key}")
     private String apiKey;
-
-    private ExecutorService executorService = Executors.newFixedThreadPool(3);
 
     public CompletableFuture<List<HabitPreQuestionRs>> requestPreQuestions(RequestPrompt requestBody, String url) {
         log.info("PreQuestionGptCoach.requestPreQuestions : " + Thread.currentThread().getName());
@@ -38,7 +38,7 @@ public class PreQuestionGptCoach {
     }
 
     public CompletableFuture<GptRsWrapper> writeAdvice(RequestPrompt requestBody, String url) {
-        return WebClient.create()
+        return webClient
                 .post()
                 .uri(url)
                 .body(Mono.justOrEmpty(requestBody), RequestPrompt.class)
