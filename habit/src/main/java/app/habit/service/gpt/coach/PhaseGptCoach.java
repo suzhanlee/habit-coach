@@ -24,6 +24,8 @@ import reactor.core.publisher.Mono;
 @Slf4j
 public class PhaseGptCoach {
 
+    private final WebClient webClient;
+
     @Value("${app.api-key}")
     private String apiKey;
 
@@ -34,7 +36,7 @@ public class PhaseGptCoach {
     }
 
     private CompletableFuture<GptRsWrapper> writeAdvice(RequestPrompt requestBody, String url) {
-        return WebClient.create()
+        return webClient
                 .post()
                 .uri(url)
                 .body(Mono.justOrEmpty(requestBody), RequestPrompt.class)
