@@ -56,7 +56,7 @@ public class FeedbackPromptFactory {
         return new RequestPrompt(model, List.of(new PromptMessage(PromptRole.USER, promptBuilder)));
     }
 
-    public String createPrompt(FeedbackPromptDto feedbackPromptDto) {
+    private String createPrompt(FeedbackPromptDto feedbackPromptDto) {
         StringBuilder promptBuilder = new StringBuilder();
         promptBuilder.append("subject : ").append(feedbackPromptDto.getSubject()).append('\n');
 

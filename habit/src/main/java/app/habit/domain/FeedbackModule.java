@@ -33,8 +33,9 @@ public class FeedbackModule {
         this.subject = subject;
     }
 
-    public FeedbackModule(Long id) {
+    public FeedbackModule(Long id, String subject) {
         this.id = id;
+        this.subject = subject;
     }
 
     public void addSubject(String subject) {

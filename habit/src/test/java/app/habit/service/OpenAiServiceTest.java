@@ -1,32 +1,45 @@
 package app.habit.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import app.habit.domain.FeedbackModule;
+import app.habit.domain.FeedbackSession;
 import app.habit.domain.Habit;
 import app.habit.domain.HabitAssessmentManager;
 import app.habit.domain.HabitFormingPhase;
 import app.habit.domain.factory.EvaluationPromptFactory;
+import app.habit.domain.factory.FeedbackPromptFactory;
 import app.habit.domain.factory.PreQuestionPromptFactory;
 import app.habit.domain.factory.SpecificPhasePreQuestionPromptFactory;
+import app.habit.dto.openaidto.FeedbackPromptDto;
+import app.habit.dto.openaidto.FeedbackPromptDto.FeedbackDto;
 import app.habit.dto.openaidto.HabitPreQuestionRs;
+import app.habit.dto.openaidto.PhaseAnswerRq;
 import app.habit.dto.openaidto.PhaseEvaluationAnswerRq;
 import app.habit.dto.openaidto.PhaseEvaluationRq;
 import app.habit.dto.openaidto.PhaseEvaluationRs;
+import app.habit.dto.openaidto.PhaseFeedbackRq;
+import app.habit.dto.openaidto.PhaseFeedbackRs;
 import app.habit.dto.openaidto.PhaseQuestionRs;
 import app.habit.dto.openaidto.QuestionRs;
 import app.habit.dto.openaidto.SingleEvaluationPromptDto;
 import app.habit.dto.openaidto.UserHabitPreQuestionRq;
 import app.habit.dto.openaidto.UserHabitPreQuestionRs;
+import app.habit.repository.FeedbackModuleRepository;
+import app.habit.repository.FeedbackSessionRepository;
 import app.habit.repository.HabitAssessmentManagerRepository;
 import app.habit.repository.HabitFormingPhaseRepository;
 import app.habit.repository.HabitRepository;
 import app.habit.service.gpt.coach.EvaluationGptCoach;
+import app.habit.service.gpt.coach.FeedbackGptCoach;
 import app.habit.service.gpt.coach.PhaseGptCoach;
 import app.habit.service.gpt.coach.PreQuestionGptCoach;
 import app.habit.service.gpt.request.RequestPrompt;
@@ -36,6 +49,8 @@ import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -91,10 +106,25 @@ public class OpenAiServiceTest {
     @MockBean
     private FeedbackSessionService feedbackSessionService;
 
+    @MockBean
+    private FeedbackModuleRepository feedbackModuleRepository;
+
+    @MockBean
+    private FeedbackSessionRepository feedbackSessionRepository;
+
+    @MockBean
+    private FeedbackPromptFactory feedbackPromptFactory;
+
+    @MockBean
+    private FeedbackGptCoach feedbackGptCoach;
+
     @Autowired
     private OpenAiService openAiService;
 
     private String testUrl;
+
+    @Captor
+    private ArgumentCaptor<FeedbackPromptDto> feedbackPromptDtoCaptor;
 
     @BeforeEach
     void setUp() {
@@ -246,5 +276,63 @@ public class OpenAiServiceTest {
 
     private PhaseQuestionRs createPhaseQuestionRs(String questionKey, String question) {
         return new PhaseQuestionRs(questionKey, question);
+    }
+
+    @Test
+    @DisplayName("습관 형성 단계 향상을 위한 질문 답변에 대한 피드백을 가져온다.")
+    public void get_feedback_about_specific_subject() throws Exception {
+        // given
+        Long givenFeedbackModuleId = 1L;
+        String givenHabitFormingPhaseType = "consideration stage";
+        PhaseFeedbackRq rq = createPhaseFeedbackRq(givenHabitFormingPhaseType, givenFeedbackModuleId);
+        String givenSubject = "subject1";
+        FeedbackPromptDto givenFeedbackPromptDto = createFeedbackPromptDto(givenSubject);
+        RequestPrompt requestPrompt = new RequestPrompt();
+        PhaseFeedbackRs expectedPhaseFeedbackRs = new PhaseFeedbackRs(givenSubject, "feedback");
+
+        // when
+        when(feedbackModuleRepository.findById(eq(givenFeedbackModuleId))).thenReturn(
+                Optional.of(new FeedbackModule(givenFeedbackModuleId, givenSubject)));
+        when(feedbackSessionRepository.findFeedbackSessionsByFeedbackModuleId(eq(givenFeedbackModuleId))).thenReturn(
+                createExpectedFeedbackSessions());
+        when(feedbackPromptFactory.create(feedbackPromptDtoCaptor.capture(), eq(givenHabitFormingPhaseType))).thenReturn(
+                requestPrompt);
+        when(feedbackGptCoach.requestPhaseFeedback(requestPrompt, testUrl)).thenReturn(
+                CompletableFuture.completedFuture(expectedPhaseFeedbackRs));
+
+        PhaseFeedbackRs result = openAiService.getFeedbackAboutSpecificSubject(rq).get();
+
+        // then
+        assertThat(result).isEqualTo(expectedPhaseFeedbackRs);
+
+        verify(feedbackModuleRepository, times(1)).findById(givenFeedbackModuleId);
+        verify(feedbackSessionRepository, times(1)).findFeedbackSessionsByFeedbackModuleId(givenFeedbackModuleId);
+        verify(feedbackPromptFactory, times(1)).create(any(FeedbackPromptDto.class), eq(givenHabitFormingPhaseType));
+        verify(feedbackGptCoach, times(1)).requestPhaseFeedback(requestPrompt, testUrl);
+
+        FeedbackPromptDto capturedFeedbackPromptDto = feedbackPromptDtoCaptor.getValue();
+        assertThat(capturedFeedbackPromptDto).isEqualTo(givenFeedbackPromptDto);
+    }
+
+    private PhaseFeedbackRq createPhaseFeedbackRq(String habitFormingPhaseType, Long feedbackModuleId) {
+        return new PhaseFeedbackRq(habitFormingPhaseType, feedbackModuleId,
+                List.of(
+                        new PhaseAnswerRq("sessionKey1", "answer1"),
+                        new PhaseAnswerRq("sessionKey2", "answer2"),
+                        new PhaseAnswerRq("sessionKey3", "answer3"))
+        );
+    }
+
+    private FeedbackPromptDto createFeedbackPromptDto(String subject) {
+        return new FeedbackPromptDto(subject,
+                List.of(new FeedbackDto("sessionKey1", "question1", "answer1"),
+                        new FeedbackDto("sessionKey2", "question2", "answer2"),
+                        new FeedbackDto("sessionKey3", "question3", "answer3")));
+    }
+
+    private List<FeedbackSession> createExpectedFeedbackSessions() {
+        return List.of(new FeedbackSession("sessionKey1", "question1", "answer1"),
+                new FeedbackSession("sessionKey2", "question2", "answer2"),
+                new FeedbackSession("sessionKey3", "question3", "answer3"));
     }
 }
