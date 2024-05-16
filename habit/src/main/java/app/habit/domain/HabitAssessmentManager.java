@@ -29,6 +29,10 @@ public class HabitAssessmentManager {
     @Getter
     private Long habitFormingPhaseId;
 
+    public HabitAssessmentManager(Long id) {
+        this.id = id;
+    }
+
     public void assess(String phaseType, String phaseDescription) {
         this.phaseType = HabitFormingPhaseType.findType(phaseType);
         this.phaseDescription = phaseDescription;

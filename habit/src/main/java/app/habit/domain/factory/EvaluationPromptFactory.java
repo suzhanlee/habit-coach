@@ -42,11 +42,10 @@ public class EvaluationPromptFactory {
                 + createPrompt(totalEvaluationPromptDto)
                 + SUFFIX;
 
-        System.out.println(promptBuilder.toString());
         return new RequestPrompt(model, List.of(new PromptMessage(PromptRole.USER, promptBuilder)));
     }
 
-    public String createPrompt(List<SingleEvaluationPromptDto> totalEvaluationPromptDto) {
+    private String createPrompt(List<SingleEvaluationPromptDto> totalEvaluationPromptDto) {
         StringBuilder promptBuilder = new StringBuilder();
 
         for (SingleEvaluationPromptDto singleEvaluationPromptDto : totalEvaluationPromptDto) {
