@@ -41,6 +41,8 @@ public class EvaluationPromptFactory {
         String promptBuilder = PREFIX
                 + createPrompt(totalEvaluationPromptDto)
                 + SUFFIX;
+
+        System.out.println(promptBuilder.toString());
         return new RequestPrompt(model, List.of(new PromptMessage(PromptRole.USER, promptBuilder)));
     }
 
