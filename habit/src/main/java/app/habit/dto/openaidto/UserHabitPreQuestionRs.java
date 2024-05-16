@@ -14,4 +14,10 @@ public class UserHabitPreQuestionRs {
     private String key;
     private String subject;
     private List<PhaseQuestionRs> questions;
+
+    public UserHabitPreQuestionRs(String key, String subject, List<PhaseQuestionRs> questions) {
+        this.key = key;
+        this.subject = subject;
+        this.questions = questions;
+    }
 }

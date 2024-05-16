@@ -1,6 +1,7 @@
 package app.habit.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -9,17 +10,24 @@ import static org.mockito.Mockito.when;
 
 import app.habit.domain.Habit;
 import app.habit.domain.HabitAssessmentManager;
+import app.habit.domain.HabitFormingPhase;
 import app.habit.domain.factory.EvaluationPromptFactory;
 import app.habit.domain.factory.PreQuestionPromptFactory;
+import app.habit.domain.factory.SpecificPhasePreQuestionPromptFactory;
 import app.habit.dto.openaidto.HabitPreQuestionRs;
 import app.habit.dto.openaidto.PhaseEvaluationAnswerRq;
 import app.habit.dto.openaidto.PhaseEvaluationRq;
 import app.habit.dto.openaidto.PhaseEvaluationRs;
+import app.habit.dto.openaidto.PhaseQuestionRs;
 import app.habit.dto.openaidto.QuestionRs;
 import app.habit.dto.openaidto.SingleEvaluationPromptDto;
+import app.habit.dto.openaidto.UserHabitPreQuestionRq;
+import app.habit.dto.openaidto.UserHabitPreQuestionRs;
 import app.habit.repository.HabitAssessmentManagerRepository;
+import app.habit.repository.HabitFormingPhaseRepository;
 import app.habit.repository.HabitRepository;
 import app.habit.service.gpt.coach.EvaluationGptCoach;
+import app.habit.service.gpt.coach.PhaseGptCoach;
 import app.habit.service.gpt.coach.PreQuestionGptCoach;
 import app.habit.service.gpt.request.RequestPrompt;
 import java.util.List;
@@ -67,6 +75,21 @@ public class OpenAiServiceTest {
 
     @MockBean
     private EvaluationGptCoach evaluationGptCoach;
+
+    @MockBean
+    private SpecificPhasePreQuestionPromptFactory specificPhasePreQuestionPromptFactory;
+
+    @MockBean
+    private HabitFormingPhaseRepository habitFormingPhaseRepository;
+
+    @MockBean
+    private PhaseGptCoach phaseGptCoach;
+
+    @MockBean
+    private FeedbackModuleService feedbackModuleService;
+
+    @MockBean
+    private FeedbackSessionService feedbackSessionService;
 
     @Autowired
     private OpenAiService openAiService;
@@ -176,5 +199,52 @@ public class OpenAiServiceTest {
         return List.of(new SingleEvaluationPromptDto("subjectKey1", "subject1", "question1", "answer1"),
                 new SingleEvaluationPromptDto("subjectKey2", "subject2", "question2", "answer2"),
                 new SingleEvaluationPromptDto("subjectKey3", "subject3", "question3", "answer3"));
+    }
+
+    @Test
+    @DisplayName("사용자의 습관 형성 단계 향상을 위한 설문지를 가져온다")
+    public void get_specific_phase_pre_questions() throws Exception {
+        // given
+        Long givenHabitFormingPhaseId = 1L;
+        String habitFormingPhaseType = "consideration stage";
+        UserHabitPreQuestionRq rq = new UserHabitPreQuestionRq(givenHabitFormingPhaseId, habitFormingPhaseType);
+        RequestPrompt requestPrompt = new RequestPrompt();
+        List<UserHabitPreQuestionRs> expectedUserHabitPreQuestionRsList = createUserHabitPreQuestionRsList();
+
+        // when
+        when(specificPhasePreQuestionPromptFactory.create(rq.getHabitFormingPhaseType())).thenReturn(requestPrompt);
+        when(habitFormingPhaseRepository.findById(givenHabitFormingPhaseId)).thenReturn(
+                Optional.of(new HabitFormingPhase(givenHabitFormingPhaseId)));
+        when(phaseGptCoach.requestUserHabitPreQuestions(requestPrompt, testUrl)).thenReturn(
+                CompletableFuture.completedFuture(expectedUserHabitPreQuestionRsList));
+        when(feedbackModuleService.save(anyString(), anyString(), eq(givenHabitFormingPhaseId))).thenReturn(anyLong());
+
+        List<UserHabitPreQuestionRs> result = openAiService.getSpecificPhasePreQuestions(rq).get();
+
+        // then
+        assertThat(result).isEqualTo(expectedUserHabitPreQuestionRsList);
+
+        verify(specificPhasePreQuestionPromptFactory, times(1)).create(habitFormingPhaseType);
+        verify(habitFormingPhaseRepository, times(1)).findById(givenHabitFormingPhaseId);
+        verify(phaseGptCoach, times(1)).requestUserHabitPreQuestions(requestPrompt, testUrl);
+        verify(feedbackModuleService, times(3)).save(anyString(), anyString(), eq(givenHabitFormingPhaseId));
+        verify(feedbackSessionService, times(9)).save(anyString(), anyString(), anyLong());
+    }
+
+    private List<UserHabitPreQuestionRs> createUserHabitPreQuestionRsList() {
+        return List.of(
+                new UserHabitPreQuestionRs("key1", "subject1", createPhaseQuestionRsList()),
+                new UserHabitPreQuestionRs("key2", "subject2", createPhaseQuestionRsList()),
+                new UserHabitPreQuestionRs("key3", "subject3", createPhaseQuestionRsList()));
+    }
+
+    private List<PhaseQuestionRs> createPhaseQuestionRsList() {
+        return List.of(createPhaseQuestionRs("questionKey1", "question1"),
+                createPhaseQuestionRs("questionKey2", "question2"),
+                createPhaseQuestionRs("questionKey3", "question3"));
+    }
+
+    private PhaseQuestionRs createPhaseQuestionRs(String questionKey, String question) {
+        return new PhaseQuestionRs(questionKey, question);
     }
 }
