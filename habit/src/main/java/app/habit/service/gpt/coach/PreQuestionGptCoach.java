@@ -37,7 +37,7 @@ public class PreQuestionGptCoach {
         return parseAdvice(adviceBody);
     }
 
-    public CompletableFuture<GptRsWrapper> writeAdvice(RequestPrompt requestBody, String url) {
+    private CompletableFuture<GptRsWrapper> writeAdvice(RequestPrompt requestBody, String url) {
         return webClient
                 .post()
                 .uri(url)

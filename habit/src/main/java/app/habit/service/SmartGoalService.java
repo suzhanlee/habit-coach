@@ -17,6 +17,7 @@ import app.habit.repository.SmartRepository;
 import app.habit.service.gpt.coach.SmartGoalFeedbackGptCoach;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,6 +55,7 @@ public class SmartGoalService {
                 .supplyAsync(() -> feedbackPromptFactory.create(habitName, phaseType, rq.getGoal()), executorService)
                 .thenApplyAsync(requestPrompt -> feedbackGptCoach.requestSmartGoalFeedback(requestPrompt, url),
                         executorService)
+                .thenComposeAsync(Function.identity(), executorService)
                 .thenApplyAsync(feedback -> {
                     Smart smart = new Smart(goalTracker.getId(), rq.getGoal(), feedback);
                     smartRepository.save(smart);
@@ -88,9 +90,9 @@ public class SmartGoalService {
 
         return CompletableFuture
                 .supplyAsync(() -> feedbackPromptFactory.create(habitName, phaseType, rq.getGoal()), executorService)
-                .thenApplyAsync(requestPrompt -> {
-                    String feedback = feedbackGptCoach.requestSmartGoalFeedback(requestPrompt, url);
-                    return new UpdateSmartGoalRs(feedback);
-                }, executorService);
+                .thenApplyAsync(requestPrompt -> feedbackGptCoach.requestSmartGoalFeedback(requestPrompt, url),
+                        executorService)
+                .thenComposeAsync(Function.identity(), executorService)
+                .thenApplyAsync(UpdateSmartGoalRs::new, executorService);
     }
 }
