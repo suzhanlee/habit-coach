@@ -14,7 +14,7 @@ public class ExecutionIntentionService {
     private final ExecutionIntentionRepository executionIntentionRepository;
 
     public UserExecutionIntentionRs getExecutionIntention(long executionIntentionId) {
-        return executionIntentionRepository.findUserSmartGoalRsById(executionIntentionId);
+        return executionIntentionRepository.findUserSmartGoalRsById(executionIntentionId).orElseThrow();
     }
 
     public void deleteExecutionIntention(long executionIntentionId) {
