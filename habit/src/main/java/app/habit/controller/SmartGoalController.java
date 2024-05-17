@@ -6,6 +6,7 @@ import app.habit.dto.smartdto.UpdateSmartGoalRq;
 import app.habit.dto.smartdto.UpdateSmartGoalRs;
 import app.habit.dto.smartdto.UserSmartGoalRs;
 import app.habit.service.SmartGoalService;
+import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,7 +23,7 @@ public class SmartGoalController {
     private final SmartGoalService smartGoalService;
 
     @PostMapping("/habit/smart")
-    public CreateSmartGoalRs createSmartGoal(@RequestBody CreateSmartGoalRq rq) {
+    public CompletableFuture<CreateSmartGoalRs> createSmartGoal(@RequestBody CreateSmartGoalRq rq) {
         return smartGoalService.createSmartGoal(rq);
     }
 
@@ -37,7 +38,7 @@ public class SmartGoalController {
     }
 
     @PutMapping("/habit/smart")
-    public UpdateSmartGoalRs updateSmartGoal(@RequestBody UpdateSmartGoalRq rq) {
+    public CompletableFuture<UpdateSmartGoalRs> updateSmartGoal(@RequestBody UpdateSmartGoalRq rq) {
         return smartGoalService.updateSmartGoal(rq);
     }
 }

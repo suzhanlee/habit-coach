@@ -1,7 +1,6 @@
 package app.habit.service;
 
 import app.habit.domain.GoalTracker;
-import app.habit.domain.Habit;
 import app.habit.domain.HabitFormingPhaseType;
 import app.habit.domain.Smart;
 import app.habit.domain.factory.SmartGoalFeedbackPromptFactory;
@@ -16,7 +15,8 @@ import app.habit.repository.HabitFormingPhaseRepository;
 import app.habit.repository.HabitRepository;
 import app.habit.repository.SmartRepository;
 import app.habit.service.gpt.coach.SmartGoalFeedbackGptCoach;
-import app.habit.service.gpt.request.RequestPrompt;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,16 +27,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class SmartGoalService {
 
     private static final String url = "https://api.openai.com/v1/chat/completions";
+
+    private final GoalTrackerRepository goalTrackerRepository;
+    private final HabitAssessmentManagerRepository habitAssessmentManagerRepository;
+    private final HabitFormingPhaseRepository habitFormingPhaseRepository;
+    private final HabitRepository habitRepository;
     private final SmartGoalFeedbackPromptFactory feedbackPromptFactory;
     private final SmartGoalFeedbackGptCoach feedbackGptCoach;
-
     private final SmartRepository smartRepository;
-    private final GoalTrackerRepository goalTrackerRepository;
-    private final HabitRepository habitRepository;
-    private final HabitFormingPhaseRepository habitFormingPhaseRepository;
-    private final HabitAssessmentManagerRepository habitAssessmentManagerRepository;
 
-    public CreateSmartGoalRs createSmartGoal(CreateSmartGoalRq rq) {
+    private final ExecutorService executorService;
+
+    public CompletableFuture<CreateSmartGoalRs> createSmartGoal(CreateSmartGoalRq rq) {
         GoalTracker goalTracker = goalTrackerRepository.findById(rq.getGoalTrackerId()).orElseThrow();
 
         Long habitId = goalTracker.getHabitId();
@@ -47,14 +49,16 @@ public class SmartGoalService {
                 .orElseThrow();
 
         String habitName = habitRepository.findById(habitId).orElseThrow().getName();
-        RequestPrompt requestPrompt = feedbackPromptFactory.create(habitName, phaseType, rq.getGoal());
 
-        String smartGoalFeedback = feedbackGptCoach.requestSmartGoalFeedback(requestPrompt, url);
-
-        Smart smart = new Smart(goalTracker.getId(), rq.getGoal(), smartGoalFeedback);
-        smartRepository.save(smart);
-
-        return new CreateSmartGoalRs(smart.getId(), smartGoalFeedback);
+        return CompletableFuture
+                .supplyAsync(() -> feedbackPromptFactory.create(habitName, phaseType, rq.getGoal()), executorService)
+                .thenApplyAsync(requestPrompt -> feedbackGptCoach.requestSmartGoalFeedback(requestPrompt, url),
+                        executorService)
+                .thenApplyAsync(feedback -> {
+                    Smart smart = new Smart(goalTracker.getId(), rq.getGoal(), feedback);
+                    smartRepository.save(smart);
+                    return new CreateSmartGoalRs(smart.getId(), feedback);
+                }, executorService);
     }
 
     public UserSmartGoalRs getSmartGoal(long smartGoalId) {
@@ -65,7 +69,7 @@ public class SmartGoalService {
         smartRepository.deleteById(smartGoalId);
     }
 
-    public UpdateSmartGoalRs updateSmartGoal(UpdateSmartGoalRq rq) {
+    public CompletableFuture<UpdateSmartGoalRs> updateSmartGoal(UpdateSmartGoalRq rq) {
         Long goalTrackerId = smartRepository.findById(rq.getSmartId())
                 .orElseThrow()
                 .getGoalTrackerId();
@@ -82,8 +86,11 @@ public class SmartGoalService {
                         habitFormingPhaseRepository.findIdByHabitId(habitId).orElseThrow())
                 .orElseThrow();
 
-        RequestPrompt requestPrompt = feedbackPromptFactory.create(habitName, phaseType, rq.getGoal());
-        String feedback = feedbackGptCoach.requestSmartGoalFeedback(requestPrompt, url);
-        return new UpdateSmartGoalRs(feedback);
+        return CompletableFuture
+                .supplyAsync(() -> feedbackPromptFactory.create(habitName, phaseType, rq.getGoal()), executorService)
+                .thenApplyAsync(requestPrompt -> {
+                    String feedback = feedbackGptCoach.requestSmartGoalFeedback(requestPrompt, url);
+                    return new UpdateSmartGoalRs(feedback);
+                }, executorService);
     }
 }
