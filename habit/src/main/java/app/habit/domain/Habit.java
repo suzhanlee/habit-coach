@@ -34,6 +34,11 @@ public class Habit {
         this.id = id;
     }
 
+    public Habit(Long id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+
     public void setId(long habitId) {
         this.id = habitId;
     }

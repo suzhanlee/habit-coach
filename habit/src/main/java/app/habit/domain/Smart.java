@@ -29,4 +29,9 @@ public class Smart {
         this.goal = goal;
         this.feedback = feedback;
     }
+
+    public Smart(Long id, Long goalTrackerId) {
+        this.id = id;
+        this.goalTrackerId = goalTrackerId;
+    }
 }
