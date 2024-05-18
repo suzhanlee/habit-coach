@@ -15,22 +15,20 @@ import app.habit.domain.GoalTracker;
 import app.habit.domain.Habit;
 import app.habit.domain.HabitFormingPhaseType;
 import app.habit.domain.Smart;
-import app.habit.domain.factory.EvaluationPromptFactory;
 import app.habit.domain.factory.ExecutionIntentionFeedbackPromptFactory;
-import app.habit.domain.factory.SmartGoalFeedbackPromptFactory;
 import app.habit.dto.executionintentiondto.CreateExecutionIntentionRq;
 import app.habit.dto.executionintentiondto.CreateExecutionIntentionRs;
+import app.habit.dto.executionintentiondto.UpdateExecutionIntentionRq;
+import app.habit.dto.executionintentiondto.UpdateExecutionIntentionRs;
 import app.habit.dto.executionintentiondto.UserExecutionIntentionRs;
-import app.habit.dto.smartdto.CreateSmartGoalRq;
-import app.habit.dto.smartdto.CreateSmartGoalRs;
+import app.habit.dto.smartdto.UpdateSmartGoalRq;
+import app.habit.dto.smartdto.UpdateSmartGoalRs;
 import app.habit.repository.ExecutionIntentionRepository;
 import app.habit.repository.GoalTrackerRepository;
 import app.habit.repository.HabitAssessmentManagerRepository;
 import app.habit.repository.HabitFormingPhaseRepository;
 import app.habit.repository.HabitRepository;
-import app.habit.repository.SmartRepository;
 import app.habit.service.gpt.coach.ExecutionIntentionFeedbackGptCoach;
-import app.habit.service.gpt.coach.SmartGoalFeedbackGptCoach;
 import app.habit.service.gpt.request.RequestPrompt;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -38,10 +36,6 @@ import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -174,5 +168,51 @@ public class ExecutionIntentionServiceTest {
 
         // then
         verify(executionIntentionRepository, times(1)).deleteById(executionIntentionId);
+    }
+
+    @Test
+    @DisplayName("실행 의도를 수정한다.")
+    void update_execution_intention() throws Exception {
+        // given
+        Long givenExecutionIntentionId = 1L;
+        String executionIntention = "execution intention";
+        Long goalTrackerId = 1L;
+        Long habitId = 1L;
+        String habitName = "exercise";
+        Long habitFormingPhaseId = 1L;
+        RequestPrompt requestPrompt = new RequestPrompt();
+        HabitFormingPhaseType habitFormingPhaseType = HabitFormingPhaseType.CONSIDERATION_STAGE;
+
+        UpdateExecutionIntentionRq rq = new UpdateExecutionIntentionRq(givenExecutionIntentionId, executionIntention);
+
+        String expectedFeedback = "Updated feedback!";
+        UpdateExecutionIntentionRs expectedRs = new UpdateExecutionIntentionRs(expectedFeedback);
+
+        // when
+        when(executionIntentionRepository.findById(givenExecutionIntentionId)).thenReturn(
+                Optional.of(new ExecutionIntention(givenExecutionIntentionId, goalTrackerId)));
+        when(goalTrackerRepository.findById(goalTrackerId)).thenReturn(
+                Optional.of(new GoalTracker(goalTrackerId, habitId)));
+        when(habitRepository.findById(habitId)).thenReturn(Optional.of(new Habit(habitId, habitName)));
+        when(habitFormingPhaseRepository.findIdByHabitId(habitId)).thenReturn(Optional.of(habitFormingPhaseId));
+        when(habitAssessmentManagerRepository.findPhaseTypeByHabitFormingPhaseId(habitFormingPhaseId))
+                .thenReturn(Optional.of(habitFormingPhaseType));
+        when(feedbackPromptFactory.create(anyString(), eq(habitFormingPhaseType), eq(executionIntention))).thenReturn(
+                requestPrompt);
+        when(feedbackGptCoach.requestExecutionIntentionFeedback(requestPrompt, testUrl)).thenReturn(
+                CompletableFuture.completedFuture(expectedFeedback));
+
+        UpdateExecutionIntentionRs result = executionIntentionService.updateExecutionIntention(rq).get();
+
+        // then
+        assertThat(result).isEqualTo(expectedRs);
+
+        verify(executionIntentionRepository, times(1)).findById(givenExecutionIntentionId);
+        verify(goalTrackerRepository, times(1)).findById(goalTrackerId);
+        verify(habitRepository, times(1)).findById(habitId);
+        verify(habitFormingPhaseRepository, times(1)).findIdByHabitId(habitId);
+        verify(habitAssessmentManagerRepository, times(1)).findPhaseTypeByHabitFormingPhaseId(habitFormingPhaseId);
+        verify(feedbackPromptFactory, times(1)).create(anyString(), eq(habitFormingPhaseType), eq(executionIntention));
+        verify(feedbackGptCoach, times(1)).requestExecutionIntentionFeedback(requestPrompt, testUrl);
     }
 }

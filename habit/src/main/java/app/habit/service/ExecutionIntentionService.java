@@ -6,6 +6,8 @@ import app.habit.domain.HabitFormingPhaseType;
 import app.habit.domain.factory.ExecutionIntentionFeedbackPromptFactory;
 import app.habit.dto.executionintentiondto.CreateExecutionIntentionRq;
 import app.habit.dto.executionintentiondto.CreateExecutionIntentionRs;
+import app.habit.dto.executionintentiondto.UpdateExecutionIntentionRq;
+import app.habit.dto.executionintentiondto.UpdateExecutionIntentionRs;
 import app.habit.dto.executionintentiondto.UserExecutionIntentionRs;
 import app.habit.repository.ExecutionIntentionRepository;
 import app.habit.repository.GoalTrackerRepository;
@@ -55,7 +57,8 @@ public class ExecutionIntentionService {
                         executorService)
                 .thenComposeAsync(Function.identity(), executorService)
                 .thenApplyAsync(feedback -> {
-                    ExecutionIntention executionIntention = new ExecutionIntention(goalTracker.getId(), rq.getContent(), feedback);
+                    ExecutionIntention executionIntention = new ExecutionIntention(goalTracker.getId(), rq.getContent(),
+                            feedback);
                     executionIntentionRepository.save(executionIntention);
                     return new CreateExecutionIntentionRs(executionIntention.getId(), feedback);
                 }, executorService);
@@ -67,5 +70,30 @@ public class ExecutionIntentionService {
 
     public void deleteExecutionIntention(long executionIntentionId) {
         executionIntentionRepository.deleteById(executionIntentionId);
+    }
+
+    public CompletableFuture<UpdateExecutionIntentionRs> updateExecutionIntention(UpdateExecutionIntentionRq rq) {
+        Long goalTrackerId = executionIntentionRepository.findById(rq.getExecutionIntentionId())
+                .orElseThrow()
+                .getGoalTrackerId();
+
+        Long habitId = goalTrackerRepository.findById(goalTrackerId)
+                .orElseThrow()
+                .getHabitId();
+
+        String habitName = habitRepository.findById(habitId)
+                .orElseThrow()
+                .getName();
+
+        HabitFormingPhaseType phaseType = habitAssessmentManagerRepository.findPhaseTypeByHabitFormingPhaseId(
+                        habitFormingPhaseRepository.findIdByHabitId(habitId).orElseThrow())
+                .orElseThrow();
+
+        return CompletableFuture
+                .supplyAsync(() -> feedbackPromptFactory.create(habitName, phaseType, rq.getContent()), executorService)
+                .thenApplyAsync(requestPrompt -> feedbackGptCoach.requestExecutionIntentionFeedback(requestPrompt, url),
+                        executorService)
+                .thenComposeAsync(Function.identity(), executorService)
+                .thenApplyAsync(UpdateExecutionIntentionRs::new, executorService);
     }
 }

@@ -29,4 +29,9 @@ public class ExecutionIntention {
         this.content = content;
         this.feedback = feedback;
     }
+
+    public ExecutionIntention(Long id, Long goalTrackerId) {
+        this.id = id;
+        this.goalTrackerId = goalTrackerId;
+    }
 }
